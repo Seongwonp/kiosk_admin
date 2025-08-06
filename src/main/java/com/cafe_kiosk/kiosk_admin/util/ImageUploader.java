@@ -13,15 +13,21 @@ import java.util.UUID;
 @Component
 public class ImageUploader {
 
-    private final String ftpServer = "swp2002.dothome.co.kr";
-    private final int ftpPort = 21;
-    private final String ftpUser = "swp2002";
+    @Value("${ftp.server}")
+    private String ftpServer;
+
+    @Value("${ftp.port}")
+    private int ftpPort;
+
+    @Value("${ftp.user}")
+    private String ftpUser;
 
     @Value("${ftp.pass}")
     private String ftpPass;
 
+
     private final String ftpBaseDir = "/html/img";
-    private final String baseUrl = "http://swp2002.dothome.co.kr/img/";
+    private final String baseUrl = "http://"+ ftpServer + "/img/";
 
     // 허용되는 이미지 확장자
     private static final String[] ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif"};
