@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>옵션 목록</title>
+</head>
+
+<main layout:fragment="content">
+    <div class="container-fluid">
+        <h2 class="mb-4">옵션 관리</h2>
+
+        <form method="get" th:action="@{/admin/option/list}" class="mb-3 row g-2 align-items-center">
+            <div class="col-auto">
+                <label for="categoryId" class="col-form-label">카테고리 선택:</label>
+            </div>
+            <div class="col-auto">
+                <select id="categoryId" name="categoryId" class="form-select" onchange="this.form.submit()">
+                    <option th:value="0" th:text="'전체'" th:selected="${categoryId == 0}">전체</option>
+                    <option th:each="category : ${categoryList}"
+                            th:value="${category.categoryId}"
+                            th:text="${category.name}"
+                            th:selected="${category.categoryId} == ${categoryId}">
+                    </option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="button"
+                        class="btn btn-success"
+                        data-bs-toggle="modal"
+                        data-bs-target="#addOptionModal">
+                    옵션 추가
+                </button>
+            </div>
+        </form>
+
+
+        <table class="table table-bordered align-middle text-center">
+            <thead class="table-light">
+            <tr>
+                <th>카테고리명</th>  <!-- 추가 -->
+                <th>옵션명</th>
+                <th>가격</th>
+                <th>타입</th>
+                <th>수정</th>
+                <th>활성화</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            <tr th:each="option : ${optionList}"
+                th:classappend="${option.isDeleted} ? 'deleted-option' : ''">
+                <td th:text="${option.categoryName}">카테고리명</td>
+                <td th:text="${option.optionName}">옵션이름</td>
+                <td th:text="${option.optionPrice}">0</td>
+                <td th:text="${option.optionType}">타입</td>
+                <td>
+                    <!-- 기존 수정/삭제 버튼 -->
+                    <button type="button"
+                            class="btn btn-sm btn-primary"
+                            data-bs-toggle="modal"
+                            data-bs-target="#editOptionModal"
+                            th:data-option-id="${option.optionId}"
+                            th:data-option-name="${option.optionName}"
+                            th:data-additional-price="${option.optionPrice}"
+                            th:data-option-type="${option.optionType}"
+                            th:data-category-id="${option.categoryId}"
+                            th:data-category-name="${option.categoryName}">
+                        수정
+                    </button>
+                </td>
+                <td>
+                    <div class="form-check form-switch d-flex justify-content-center">
+                        <input type="checkbox"
+                               class="form-check-input toggle-delete"
+                               th:checked="${!option.isDeleted}"
+                               th:data-option-id="${option.optionId}" />
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(optionList)}">
+                <td colspan="5" class="text-center">옵션이 없습니다.</td>
+            </tr>
+            </tbody>
+        </table>
+        <form id="toggleDeleteForm" method="post" th:action="@{/admin/option/toggle-delete}">
+            <input type="hidden" name="optionId" id="toggleOptionId" />
+            <input type="hidden" name="isDeleted" id="toggleIsDeleted" />
+        </form>
+
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="liveToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" th:if="${message}">
+                <div class="d-flex">
+                    <div class="toast-body" th:text="${message}">
+                        성공 메시지
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 옵션 추가 모달 -->
+        <div class="modal fade" id="addOptionModal" tabindex="-1" aria-labelledby="addOptionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <form th:action="@{/admin/option/add}" method="post" class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addOptionModalLabel">옵션 추가</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        <!-- 카테고리 선택 -->
+                        <div class="mb-3">
+                            <label for="modalCategoryId" class="form-label">카테고리</label>
+                            <select id="modalCategoryId" name="categoryId" class="form-select" required>
+                                <option value="" disabled selected>카테고리를 선택하세요</option>
+                                <option th:each="category : ${categoryList}"
+                                        th:value="${category.categoryId}"
+                                        th:text="${category.name}">
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- 옵션명 -->
+                        <div class="mb-3">
+                            <label for="optionName" class="form-label">옵션명</label>
+                            <input type="text" class="form-control" id="optionName" name="optionName" placeholder="예: 샷 추가" required>
+                        </div>
+
+                        <!-- 옵션 가격 -->
+                        <div class="mb-3">
+                            <label for="optionPrice" class="form-label">가격</label>
+                            <input type="number" class="form-control" id="optionPrice" name="optionPrice" placeholder="예: 500" required>
+                        </div>
+
+                        <!-- 옵션 타입 -->
+                        <div class="mb-3">
+                            <label for="optionType" class="form-label">옵션 타입</label>
+                            <input type="text" class="form-control" id="optionType" name="optionType" placeholder="예: 추가, 변경 등">
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">등록</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+
+
+
+
+
+
+        <!-- 삭제 확인 모달 -->
+        <div class="modal fade" id="deleteOptionModal" tabindex="-1" aria-labelledby="deleteOptionModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <form th:action="@{/admin/option/delete}" method="post" class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteOptionModalLabel">옵션 삭제</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong id="deleteOptionName">[옵션명]</strong> 옵션을 정말 삭제하시겠습니까?</p>
+                        <input type="hidden" name="optionId" id="deleteOptionId">
+                        <input type="hidden" name="categoryId" id="deleteCategoryId">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-danger">삭제</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+
+        <!-- 옵션 수정 모달 -->
+        <div class="modal fade" id="editOptionModal" tabindex="-1" aria-labelledby="editOptionModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <form th:action="@{/admin/option/update}" method="post" class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editOptionModalLabel">옵션 수정</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <input type="hidden" name="optionId" id="editOptionId">
+                        <input type="hidden" name="categoryId" th:value="${categoryId}">
+
+                        <div class="mb-3">
+                            <label for="editOptionName" class="form-label">옵션명</label>
+                            <input type="text" class="form-control" id="editOptionName" name="optionName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editAdditionalPrice" class="form-label">추가 금액</label>
+                            <input type="number" class="form-control" id="editAdditionalPrice" name="optionPrice"
+                                   required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editOptionType" class="form-label">옵션 타입</label>
+                            <input type="text" class="form-control" id="editOptionType" name="optionType" required>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">저장</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script layout:fragment="script" th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('editOptionModal');
+        modal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+
+            const optionId = button.getAttribute('data-option-id');
+            const optionName = button.getAttribute('data-option-name');
+            const optionType = button.getAttribute('data-option-type');
+            const additionalPrice = button.getAttribute('data-additional-price');
+            const categoryId = button.getAttribute('data-category-id');
+
+            document.getElementById('editOptionId').value = optionId;
+            document.getElementById('editOptionName').value = optionName;
+            document.getElementById('editAdditionalPrice').value = additionalPrice;
+            document.getElementById('editOptionType').value = optionType;
+            document.querySelector('input[name="categoryId"]').value = categoryId;
+        });
+
+        const deleteModal = document.getElementById('deleteOptionModal');
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+
+            const optionId = button.getAttribute('data-option-id');
+            const categoryId = button.getAttribute('data-category-id');
+            const optionName = button.getAttribute('data-option-name');
+
+            document.getElementById('deleteOptionId').value = optionId;
+            document.getElementById('deleteCategoryId').value = categoryId;
+            document.getElementById('deleteOptionName').innerText = optionName;
+        });
+
+        const categorySelect = document.getElementById('categoryId');
+        const modalCategorySelect = document.getElementById('modalCategoryId');
+        const addOptionBtn = document.querySelector('[data-bs-target="#addOptionModal"]');
+
+        addOptionBtn.addEventListener('click', function () {
+            modalCategorySelect.value = categorySelect.value || "";
+            document.getElementById('optionName').value = '';
+            document.getElementById('optionType').value = '';
+            document.getElementById('optionPrice').value = '';
+        });
+
+        const toastEl = document.getElementById('liveToast');
+        if (toastEl) {
+            const toast = new bootstrap.Toast(toastEl);
+            toast.show();
+        }
+        document.querySelectorAll(".toggle-delete").forEach(function (checkbox) {
+            checkbox.addEventListener("change", function () {
+                const optionId = this.getAttribute("data-option-id");
+                const isDeleted = !this.checked;
+
+                document.getElementById("toggleOptionId").value = optionId;
+                document.getElementById("toggleIsDeleted").value = isDeleted;
+
+                document.getElementById("toggleDeleteForm").submit();
+            });
+        });
+        document.querySelectorAll('tr.deleted-option').forEach(tr => {
+            tr.querySelectorAll('td').forEach(td => {
+                td.style.opacity = '0.5';
+                td.style.filter = 'grayscale(70%)';
+            });
+        });
+    });
+</script>
+<style>
+
+</style>
+</html>

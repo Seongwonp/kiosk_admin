@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>매뉴 관리</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .preline-tooltip .tooltip-inner {
+            white-space: pre-line;
+        }
+        .btn-outline-info {
+            color: white;
+            background-color: #ffb700; /* 배너 메인색 */
+            border-color: #ffb700;
+        }
+
+        .btn-outline-info:hover {
+            background-color: #000000;
+            color: white;
+            border-color: #000000;
+            box-shadow: 0 0 8px #000000;
+        }
+
+        table {
+            position: relative;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .badge-status {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .badge-status.sufficient {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .badge-status.low {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .badge-status.none {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* 재고 입력 필드 */
+        input[type="number"] {
+            min-width: 70px;
+            max-width: 100px;
+            padding: 4px 6px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 재고 셀 정렬 */
+        td.d-flex {
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        /* 셀 내 텍스트 줄바꿈 */
+        .table td {
+            word-break: break-word;
+            white-space: normal;
+            vertical-align: middle;
+        }
+
+        .soldout-muted {
+            opacity: 0.5;
+            filter: grayscale(70%);
+        }
+    </style>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <div class="container card shadow-sm rounded-3 p-3 mb-4">
+        <div class="card-header bg-warning text-white fw-bold fs-5">
+            <h3>☕ 메뉴 통합 관리</h3>
+        </div>
+        <div class="card shadow-sm rounded-3 p-3 mb-4">
+            <div class="card-body d-flex gap-4" style="height: 400px;">
+                <!-- 왼쪽 차트 -->
+                <div class="flex-grow-1">
+                    <h6 class="card-title text-center mb-4">카테고리별 메뉴 수</h6>
+                    <canvas id="categoryChart" style="height: 100%; width: 100%;"></canvas>
+                </div>
+
+                <!-- 오른쪽 품절 리스트 -->
+                <div style="width: 300px; overflow-y: auto;">
+                    <h6 class="text-center mb-3">📦 품절 메뉴</h6>
+                    <div class="mb-2 text-end small text-muted" th:if="${soldOutList != null}" th:text="'총 품절: ' + ${soldOutList.size()} + '개'"></div>
+                    <ul class="list-group small" style="max-height: 160px; overflow-y: auto;">
+                        <li class="list-group-item d-flex justify-content-between align-items-center soldout-item"
+                            th:each="menu : ${soldOutList}"
+                            th:attr="data-category=${menu.categoryType}">
+                            <span th:text="${menu.name}">메뉴명</span>
+                            <button type="button" class="btn btn-sm btn-outline-success btn-soldout-toggle" th:data-menu-id="${menu.menuId}">
+                                품절 해제
+                            </button>
+                        </li>
+                    </ul>
+
+                    <h6 class="text-center my-3">⚠️ 재고 부족 메뉴</h6>
+                    <div class="mb-2 text-end small text-muted" th:if="${lowStockList != null}" th:text="'총 부족: ' + ${lowStockList.size()} + '개'"></div>
+                    <ul class="list-group small" style="max-height: 160px; overflow-y: auto;">
+                        <li class="list-group-item d-flex justify-content-between align-items-center"
+                            th:each="menu : ${lowStockList}"
+                            th:attr="data-category=${menu.categoryType}">
+                            <span th:text="${menu.name}">메뉴명</span>
+                            <span class="badge bg-warning text-dark" th:text="'재고: ' + ${menu.stock}">재고</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Menu list section below -->
+        <div class="card mt-3 shadow-sm rounded-3 p-3 mb-4">
+            <h4 class="card-title text-center mb-4">메뉴 리스트</h4>
+            <div class="text-end text-muted small mb-2" th:if="${menuList != null}" th:text="'총 메뉴: ' + ${menuList.size()} + '개'"></div>
+            <div class="d-flex justify-content-end mb-2">
+                <button class="btn btn-outline-info btn-sm" id="edit-stock-toggle"><i class="bi bi-box-seam me-2"></i>재고
+                    일괄 수정
+                </button>
+                <button class="btn btn-success btn-sm ms-2 d-none" id="save-stock-all">
+                    <i class="bi bi-save me-1"></i>저장
+                </button>
+                <button class="btn btn-secondary btn-sm ms-2 d-none" id="cancel-stock-all">
+                    <i class="bi bi-x-circle me-1"></i>취소
+                </button>
+            </div>
+            <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between mb-4">
+                <div class="dropdown position-relative">
+                    <button class="btn btn-warning fw-semibold dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        카테고리 필터
+                    </button>
+                    <ul class="dropdown-menu" style="z-index: 1050; position: absolute;">
+                        <li><a class="dropdown-item" th:href="@{/admin/menu/list}">전체 보기</a></li>
+                        <li th:each="cat : ${categoryList}">
+                            <a class="dropdown-item"
+                               th:href="@{/admin/menu/list(searchType='category', keyword=${cat.name})}"
+                               th:text="${cat.name}">카테고리명</a>
+                        </li>
+                    </ul>
+
+                    <!-- 카테고리 추가 버튼 -->
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                        카테고리 추가
+                    </button>
+                    <!-- 메뉴 추가 버튼 -->
+                    <a href="/admin/menu/add" class="btn btn-success ms-2">
+                        <i class="bi bi-plus-lg me-1"></i> 메뉴 추가
+                    </a>
+                </div>
+                <form method="get" class="d-flex gap-2 flex-grow-1 flex-md-grow-0" style="min-width: 500px;">
+                    <input type="hidden" name="searchType" value="name"/>
+                    <input type="text" name="keyword" class="form-control" placeholder="메뉴명 검색"
+                           th:value="${searchType == 'name'} ? ${keyword} : ''">
+                    <select name="sortOrder" class="form-select" style="max-width: 120px;">
+                        <option value="desc" th:selected="${sortOrder == 'desc'}">최신순</option>
+                        <option value="asc" th:selected="${sortOrder == 'asc'}">오래된순</option>
+                    </select>
+                    <button type="submit" class="btn btn-warning fw-semibold px-3" style="min-width: 80px; flex-shrink: 0;">
+                        <i class="bi bi-search me-1"></i>검색
+                    </button>
+                </form>
+            </div>
+            <div class="table-responsive" style="height: 70vh; overflow-y: auto;">
+                <form th:action="@{/admin/stock/updateBatch}" method="post" id="stockBatchForm">
+                    <table class="table table-hover table-striped align-middle text-center mb-0">
+                        <thead class="table-warning sticky-top">
+                        <tr>
+                            <th>이미지</th>
+                            <th>이름</th>
+                            <th>카테고리</th>
+                            <th>가격</th>
+                            <th>상태</th>
+                            <th>옵션</th>
+                            <th>관리</th>
+                            <th>재고</th>
+                            <th>
+                                비고
+                                <i class="bi bi-info-circle-fill text-primary ms-1"
+                                   title="재고 상태 기준:&#10;0개 → 품절 &#10;1~10개 → 부족 &#10;11개 이상 → 충분"
+                                   data-bs-toggle="tooltip"
+                                   data-bs-placement="top"
+                                   data-bs-custom-class="preline-tooltip"
+                                   style="cursor: pointer; font-size: 1.1rem;">
+                                </i>
+                            </th>
+                            <th>판매여부</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="menu, menuStat : ${menuList}"
+                            th:classappend="${menu.isSoldOut} ? ' soldout-muted' : ''">
+                            <td><img th:src="${menu.imageUrl}" style="height: 80px;" class="img-fluid rounded" alt="메뉴 이미지"
+                                     onerror="this.onerror=null; this.src='/img/menu/no_image.png';"></td>
+                            <td>
+                              <span th:text="${menu.name}"></span>
+                              <i class="bi bi-info-circle-fill text-muted ms-1"
+                                 th:title="'생성일: ' + ${#temporals.format(menu.createdAt, 'yyyy-MM-dd HH:mm')} + '&#10;수정일: ' + ${#temporals.format(menu.modifiedAt, 'yyyy-MM-dd HH:mm')}"
+                                 data-bs-toggle="tooltip"
+                                 data-bs-placement="top"
+                                 style="cursor: pointer; font-size: 0.9rem;">
+                              </i>
+                            </td>
+                            <td th:text="${menu.categoryType}"></td>
+                            <td th:text="${menu.price} + '원'"></td>
+                            <td>
+                              <div>
+                                <span th:if="${!menu.isSoldOut and menu.createdAt != null and menu.createdAt.isAfter(T(java.time.LocalDateTime).now().minusDays(30))}"
+                                      class="badge bg-info text-dark me-1">신메뉴</span>
+                                <span th:classappend="${menu.isSoldOut} ? 'badge bg-secondary' : 'badge bg-success'"
+                                      th:text="${menu.isSoldOut} ? '품절' : '판매중'"></span>
+                              </div>
+                            </td>
+                            <td>
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        data-bs-toggle="modal"
+                                        th:attr="data-bs-target='#optionModal-' + ${menu.menuId}"
+                                style="width: 65px;">
+                                    <span style="font-size: 0.70rem;">옵션 보기</span>
+                                </button>
+                            </td>
+                            <td>
+                                <a th:href="@{/admin/menu/modify(menuId=${menu.menuId})}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-pencil me-1"></i>수정
+                                </a>
+                                <button th:if="${currentAdmin.adminRole.name() == 'CEO' or currentAdmin.adminRole.name()== 'MANAGER'}"
+                                        id="delete-menu-btn" class="btn btn-sm btn-danger delete-menu-btn"
+                                        th:attr="data-menu-id=${menu.menuId}">
+                                    <i class="bi bi-trash me-1"></i>삭제
+                                </button>
+                            </td>
+                            <td>
+                                <input type="hidden" th:name="'stockList[' + ${menuStat.index} + '].menuId'" th:value="${menu.menuId}"/>
+                                <input type="number" th:name="'stockList[' + ${menuStat.index} + '].stock'" th:value="${menu.stock}"
+                                       class="form-control form-control-sm text-center" min="0"
+                                       readonly/>
+                            </td>
+                            <td>
+                                <span th:if="${menu.stock == 0}" class="badge-status none">
+                                    <i class="bi bi-x-circle-fill me-1"></i>품절
+                                </span>
+                                <span th:if="${menu.stock &gt; 0 and menu.stock &lt;= 10}" class="badge-status low">
+                                    <i class="bi bi-exclamation-triangle-fill me-1"></i>재고 부족
+                                </span>
+                                <span th:if="${menu.stock &gt; 11}" class="badge-status sufficient">
+                                    <i class="bi bi-check-circle-fill me-1"></i>충분
+                                </span>
+                            </td>
+                            <td>
+                                <div class="form-check form-switch d-flex justify-content-center">
+                                    <input
+                                            class="form-check-input toggle-soldout"
+                                            type="checkbox"
+                                            th:checked="${!menu.isSoldOut}"
+                                            th:attr="data-menu-id=${menu.menuId}">
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    <!-- 옵션 모달들 -->
+                    <div th:each="menu : ${menuList}">
+                        <div class="modal fade"
+                             th:id="'optionModal-' + ${menu.menuId}"
+                             tabindex="-1"
+                             aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" th:text="${menu.name} + ' - 옵션 목록'"></h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div style="max-height: 200px; overflow-y: auto;">
+                                            <ul class="list-group">
+                                                <li class="list-group-item"
+                                                    th:each="opt : ${menu.optionList}"
+                                                    th:text="${opt.optionName + ' (' + opt.optionPrice + '원)'}">
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    </table>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- 숨겨진 품절 처리용 폼 -->
+    <form id="soldOutForm" th:action="@{/admin/stock/updateSoldOut}" method="post" style="display: none;">
+        <input type="hidden" name="menuId" id="soldOutMenuId">
+        <input type="hidden" name="isSoldOut" id="soldOutStatus">
+    </form>
+    <!-- 숨겨진 삭제 처리용 폼 -->
+    <form id="deleteForm" th:action="@{/admin/menu/delete}" method="post" style="display:none;">
+        <input type="hidden" name="menuId" id="deleteMenuId" />
+    </form>
+
+    <!-- 모달 -->
+    <div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/menu/category/add}" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addCategoryLabel">카테고리 추가</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="categoryName" class="form-label">카테고리 이름</label>
+                        <input type="text" id="categoryName" name="categoryName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="categoryDescription" class="form-label">설명</label>
+                        <input type="text" id="categoryDescription" name="categoryDescription" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">저장</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+
+<script layout:fragment="script" th:inline="javascript">
+    /*<![CDATA[*/
+    const categoryStats = /*[[${categoryStats}]]*/ [];
+    const labels = categoryStats.map(stat => stat.categoryName);
+    const data = categoryStats.map(stat => stat.menuCount);
+
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '메뉴 수',
+                data: data,
+                backgroundColor: '#ffb700',
+                borderColor: '#333',
+                borderWidth: 1,
+                borderRadius: 5,
+                barThickness: 25
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        callback: value => Number.isInteger(value) ? value : '',
+                        color: '#333',
+                        font: {size: 14, weight: 'bold'}
+                    },
+                    title: {
+                        display: true,
+                        text: '제품 수',
+                        color: '#333',
+                        font: {size: 16, weight: 'bold'}
+                    },
+                    grid: {color: '#ddd'}
+                },
+                x: {
+                    ticks: {
+                        color: '#333',
+                        font: {size: 14, weight: 'bold'},
+                        padding: 30
+                    },
+                    grid: {display: false}
+                }
+            },
+            plugins: {
+                legend: {display: false}
+            }
+        }
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const toggleBtn = document.getElementById('edit-stock-toggle');
+        const saveBtn = document.getElementById('save-stock-all');
+        const cancelBtn = document.getElementById('cancel-stock-all');
+        const stockInputs = document.querySelectorAll('input[name^="stockList"][name$=".stock"]');
+        const stockBatchForm = document.getElementById('stockBatchForm');
+        let originalStockValues = [];
+
+        // 초기 상태: 저장, 취소 버튼 숨기고 토글 버튼 보이기
+        saveBtn.classList.add('d-none');
+        cancelBtn.classList.add('d-none');
+        toggleBtn.classList.remove('d-none');
+
+        toggleBtn.addEventListener('click', function () {
+            // Save original values before editing
+            originalStockValues = Array.from(stockInputs).map(input => input.value);
+            stockInputs.forEach(input => input.removeAttribute('readonly'));
+            saveBtn.classList.remove('d-none');
+            cancelBtn.classList.remove('d-none');
+            toggleBtn.classList.add('d-none');
+        });
+
+        cancelBtn.addEventListener('click', function () {
+            // Restore original values
+            stockInputs.forEach((input, idx) => {
+                input.value = originalStockValues[idx];
+                input.setAttribute('readonly', true);
+            });
+            saveBtn.classList.add('d-none');
+            cancelBtn.classList.add('d-none');
+            toggleBtn.classList.remove('d-none');
+        });
+
+        saveBtn.addEventListener('click', function () {
+            stockBatchForm.submit();
+            // After submit, revert to readonly and hide save/cancel, show edit
+            stockInputs.forEach(input => input.setAttribute('readonly', true));
+            saveBtn.classList.add('d-none');
+            cancelBtn.classList.add('d-none');
+            toggleBtn.classList.remove('d-none');
+        });
+
+        // 판매여부 토글에 대한 이벤트 리스너 추가
+        document.querySelectorAll('.toggle-soldout').forEach(toggle => {
+            toggle.addEventListener('change', function () {
+                const menuId = this.dataset.menuId;
+                const isChecked = this.checked;
+                const confirmMsg = isChecked
+                    ? "해당 메뉴를 판매 상태로 전환하시겠습니까?"
+                    : "해당 메뉴를 품절 처리하시겠습니까?";
+
+                if (confirm(confirmMsg)) {
+                    document.getElementById('soldOutMenuId').value = menuId;
+                    document.getElementById('soldOutStatus').value = !isChecked;
+                    document.getElementById('soldOutForm').submit();
+                } else {
+                    this.checked = !isChecked;
+                }
+            });
+        });
+
+        document.querySelectorAll('.btn-soldout-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                if(confirm('품절 상태를 해제하시겠습니까?')) {
+                    const menuId = btn.dataset.menuId;
+                    document.getElementById('soldOutMenuId').value = menuId;
+                    document.getElementById('soldOutStatus').value = false; // 해제니까 false
+                    document.getElementById('soldOutForm').submit();
+                }
+            });
+        });
+
+
+
+        document.querySelectorAll('.btn-danger.delete-menu-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                event.preventDefault(); // Prevent default form or button behavior
+                const menuId = button.getAttribute('data-menu-id');
+                if(confirm('정말 이 메뉴를 삭제하시겠습니까? 삭제 시 관련 주문 항목도 함께 삭제됩니다.')) {
+                    document.getElementById('deleteMenuId').value = menuId;
+                    document.getElementById('deleteForm').submit();
+                }
+            });
+        });
+
+
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl, {
+                customClass: 'preline-tooltip'
+            });
+        });
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

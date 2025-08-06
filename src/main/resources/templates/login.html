@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>로그인</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Pretendard', sans-serif;
+            background-color: #000;
+        }
+
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            background-color: rgba(255, 255, 255, 0.92);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            padding: 40px 30px;
+            z-index: 2;
+        }
+
+        .coffee-header {
+            background-color: #6f4e37;
+            color: white;
+            padding: 16px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background-color: #6f4e37;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #3e2d23;
+        }
+    </style>
+</head>
+<body>
+    <video autoplay muted loop id="bgVideo" style="position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; z-index: -1; object-fit: cover;">
+        <source src="/img/indexVideo.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="container d-flex justify-content-center align-items-center min-vh-100">
+        <div class="card login-container shadow">
+            <div class="coffee-header d-flex align-items-center justify-content-center gap-2">
+                <i class="bi bi-cup-hot-fill fs-3"></i>
+                <h4 class="mb-0">Beans Coffee Admin Login</h4>
+            </div>
+            <div class="card-body">
+                <form th:action="@{/login}" method="post">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">아이디</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="아이디를 입력하세요" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">비밀번호</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="비밀번호를 입력하세요" required>
+                        </div>
+                    </div>
+                    <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                        아이디 또는 비밀번호가 올바르지 않습니다.
+                    </div>
+                    <div th:if="${param.logout}" class="alert alert-success" role="alert">
+                        로그아웃되었습니다.
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">로그인</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

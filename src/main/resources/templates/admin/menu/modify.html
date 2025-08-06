@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>수정::메뉴관리</title>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <div class="container my-1">
+        <form th:action="@{/admin/menu/update}" method="post" enctype="multipart/form-data" class="mx-auto"
+              style="max-width: 750px;">
+            <input type="hidden" name="menuId" th:value="${menu.menuId}"/>
+            <div class="card shadow-sm border-warning">
+                <div class="card-header bg-warning text-white">
+                    <h4 class="mb-0">메뉴 수정</h4>
+                </div>
+                <div class="card-body bg-light">
+                    <h5 class="mb-3 border-bottom pb-2">기본 정보</h5>
+                    <div class="mb-3 d-flex justify-content-center">
+                        <div class="card border-warning bg-white p-2" style="max-width: 220px;">
+                            <div class="card-body text-center">
+                                <label class="form-label fw-semibold mb-2">기존 이미지</label><br/>
+                                <img th:src="@{${menu.imageUrl}}" alt="기존 이미지" class="img-fluid rounded"
+                                     style="max-height: 180px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="name" class="form-label fw-semibold">메뉴명</label>
+                        <input type="text" class="form-control form-control-sm" id="name" name="name"
+                               th:value="${menu.name}" required/>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="price" class="form-label fw-semibold">가격</label>
+                        <input type="number" class="form-control form-control-sm" id="price" name="price"
+                               th:value="${menu.price}" required/>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="isSoldOut" class="form-label fw-semibold">품절 여부</label>
+                        <select class="form-select form-select-sm" id="isSoldOut" name="isSoldOut">
+                            <option th:value="false" th:selected="${!menu.isSoldOut}">판매중</option>
+                            <option th:value="true" th:selected="${menu.isSoldOut}">품절</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="imageFile" class="form-label fw-semibold">이미지 업로드</label>
+                        <input type="file" class="form-control form-control-sm" id="imageFile" name="imageFile"
+                               accept="image/*"/>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="stock" class="form-label fw-semibold">재고</label>
+                        <input type="number" class="form-control form-control-sm" id="stock" name="stock"
+                               th:value="${menu.stock}"/>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="categoryId" class="form-label fw-semibold">카테고리</label>
+                        <select class="form-select form-select-sm" id="categoryId" name="categoryId" required>
+                            <option th:each="cat : ${categoryList}" th:value="${cat.categoryId}" th:text="${cat.name}"
+                                    th:selected="${cat.categoryId == menu.categoryId}"></option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="card-footer d-flex justify-content-between align-items-center bg-white">
+                    <div>
+                        <button type="reset" class="btn btn-outline-secondary btn-sm me-2">초기화</button>
+                        <a href="/admin/menu/list" class="btn btn-outline-dark btn-sm">이전으로</a>
+                    </div>
+                    <button type="submit" class="btn btn-warning btn-sm text-white fw-semibold">
+                        <i class="bi bi-check-circle me-1"></i> 수정 완료
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

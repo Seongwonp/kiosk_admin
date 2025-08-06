@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>대시보드</title>
+</head>
+
+<main layout:fragment="content">
+    <div th:if="${soldOutCount > 0 || lowStockCount > 0}" class="alert alert-danger d-flex align-items-center" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2" style="font-size: 1.5rem;"></i>
+        <div>
+            🛑 총 <strong th:text="${soldOutCount + lowStockCount}">0</strong>개 품절/재고 부족 메뉴가 있습니다.
+            (<span th:if="${soldOutCount > 0}">품절 <strong th:text="${soldOutCount}">0</strong>개</span>
+            <span th:if="${soldOutCount > 0 && lowStockCount > 0}">, </span>
+            <span th:if="${lowStockCount > 0}">재고 부족 <strong th:text="${lowStockCount}">0</strong>개</span>)
+        </div>
+        <a th:href="@{/admin/menu/list}" class="btn btn-sm btn-outline-primary ms-auto">재고 관리 바로가기</a>
+    </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- 진행중 주문 -->
+            <div class="col-md-4 mb-3">
+                <div class="card text-dark shadow-sm rounded-3" style="background-color: #ffecb3;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">
+                            <i class="bi bi-clock me-2"></i> 진행중 주문
+                        </h5>
+                        <p class="card-text h4 mb-0" th:text="${waitingCount}">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 완료 주문 -->
+            <div class="col-md-4 mb-3">
+                <div class="card text-dark shadow-sm rounded-3" style="background-color: #b2dfdb;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">
+                            <i class="bi bi-check-circle me-2"></i> 완료 주문
+                        </h5>
+                        <p class="card-text h4 mb-0" th:text="${completeCount}">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 취소 주문 -->
+            <div class="col-md-4 mb-3">
+                <div class="card text-dark shadow-sm rounded-3" style="background-color: #ffcccc;">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">
+                            <i class="bi bi-x-circle me-2"></i> 취소 주문
+                        </h5>
+                        <p class="card-text h4 mb-0" th:text="${cancelledCount}">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4 shadow-sm rounded-3 border-0" style="background-color: #fff3e0;">
+            <div class="card-header text-dark border-bottom-0" style="background-color: #ffe0b2;">
+                <strong>진행중 주문 리스트</strong>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped mb-0 text-center">
+                        <thead class="table-light">
+                        <tr>
+                            <th>주문번호</th>
+                            <th>전화번호</th>
+                            <th>주문일시</th>
+                            <th>총 결제금액</th>
+                            <th>주문 방식</th>
+                            <th>상태</th>
+                            <th>완료</th>
+                            <th>취소</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="order : ${waitingOrders}">
+                            <td>
+                                <a href="#" th:text="${order.orderId}"
+                                   data-bs-toggle="modal"
+                                   th:attr="data-bs-target='#orderModal__' + ${order.orderId}"></a>
+                            </td>
+                            <td th:text="${order.phone}">010-xxxx-xxxx</td>
+                            <td th:text="${#temporals.format(order.orderTime, 'yyyy-MM-dd HH:mm')}">2025-07-31 10:00</td>
+                            <td th:text="${#numbers.formatInteger(order.totalAmount, 3, 'COMMA')}">5,000</td>
+                            <td th:text="${order.orderMethod}">KIOSK</td>
+                            <td th:text="${order.status}">WAITING</td>
+                            <td>
+                                <form th:action="@{/admin/order/complete}" method="post">
+                                    <input type="hidden" name="orderId" th:value="${order.orderId}" />
+                                    <button type="submit" class="btn btn-sm rounded-pill" style="background-color: #8bc34a; color: white;">
+                                        완료
+                                    </button>
+                                </form>
+                            </td>
+                            <td>
+                                <form th:action="@{/admin/order/cancel}" method="post">
+                                    <input type="hidden" name="orderId" th:value="${order.orderId}" />
+                                    <button type="submit" class="btn btn-sm rounded-pill" style="background-color: #f44336; color: white;">
+                                        취소
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(waitingOrders)}">
+                            <td colspan="8">진행중인 주문이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card text-dark shadow-sm rounded-3" style="background-color: #ffecb3;">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-bar-chart me-2"></i> 오늘 매출
+                        </h5>
+                        <p class="card-text h4 mb-0" th:text="'₩ ' + ${#numbers.formatInteger(todaySales, 3, 'COMMA')}">₩ 0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-dark shadow-sm rounded-3" style="background-color: #b2dfdb;">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-calendar-event me-2"></i> 이번 달 매출
+                        </h5>
+                        <p class="card-text h4 mb-0" th:text="'₩ ' + ${#numbers.formatInteger(monthSales, 3, 'COMMA')}">₩ 0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-dark shadow-sm rounded-3" style="background-color: #ffcccc;">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-calendar-event me-2"></i> 올해 매출
+                        </h5>
+                        <p class="card-text h4 mb-0" th:text="'₩ ' + ${#numbers.formatInteger(yearSales, 3, 'COMMA')}">₩ 0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow-sm rounded-3">
+                    <div class="card-header text-dark" style="background-color: #ffe0b2;">
+                        <strong><i class="bi bi-clock me-2"></i>금일 시간대별 매출 차트 (AM / PM)</strong>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="hourlySalesChart" height="157"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6 mb-4" style="max-height: 490px; overflow-y: auto;">
+                <div class="card shadow-sm rounded-3">
+                    <div class="card-header text-dark" style="background-color: #ffe0b2;">
+                        <strong>금일 시간대별 매출 상세 리스트</strong>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped mb-0 text-center">
+                                <thead class="table-light">
+                                <tr>
+                                    <th>시간</th>
+                                    <th>주문 수</th>
+                                    <th>총 매출 (₩)</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr th:each="sale : ${hourlySales}">
+                                    <td th:text="${sale.hour} + '시'">10시</td>
+                                    <td th:text="${sale.orderCount}">0</td>
+                                    <td th:text="${#numbers.formatInteger(sale.totalSales, 3, 'COMMA')}">0</td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(hourlySales)}">
+                                    <td colspan="3" class="text-center">매출 정보가 없습니다.</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:each="order : ${waitingOrders}"
+             th:id="'orderModal__' + ${order.orderId}"
+             class="modal fade" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" th:text="'주문 상세 - 주문번호: ' + ${order.orderId}"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table table-bordered">
+                            <thead class="table-secondary">
+                            <tr>
+                                <th>메뉴명</th>
+                                <th>옵션</th>
+                                <th>수량</th>
+                                <th>가격</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item : ${order.orderItemList}">
+                                <td th:text="${item.menuDTO.name}">아메리카노</td>
+                                <td>
+  <span th:each="opt : ${item.optionList}">
+    <span th:text="|${opt.optionName} (+${#numbers.formatInteger(opt.optionPrice, 3, 'COMMA')}원)|"></span><br/>
+  </span>
+                                </td>
+
+                                <td th:text="${item.quantity}">2</td>
+                                <td th:text="|${#numbers.formatInteger(item.price, 3, 'COMMA')}원|">5,000원</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script layout:fragment="script" th:inline="javascript">
+    const hourlySalesData = /*[[${hourlySales}]]*/ [];
+
+    const amLabels = Array.from({length: 12}, (_, i) => (i === 0 ? '12시' : `${i}시`));
+    const salesMap = {};
+    hourlySalesData.forEach(s => {
+        salesMap[s.hour] = s.totalSales;
+    });
+
+    // 오전 → 실제 0~11시 데이터
+    const amSales = Array.from({length: 12}, (_, i) => salesMap[i] || 0);
+    // 오후 → 12~23시를 다시 0~11에 매핑 (예: 12시는 index 0, 13시는 index 1...)
+    const pmSales = Array.from({length: 12}, (_, i) => salesMap[i + 12] || 0);
+
+    const ctx = document.getElementById("hourlySalesChart").getContext("2d");
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: amLabels, // x축은 항상 0~11시
+            datasets: [
+                {
+                    label: "오전 매출 (₩)",
+                    data: amSales,
+                    borderColor: '#f48fb1',
+                    backgroundColor: 'rgba(251, 233, 231, 0.5)',
+                    fill: true,
+                    tension: 0.3,
+                },
+                {
+                    label: "오후 매출 (₩)",
+                    data: pmSales,
+                    borderColor: '#ffb74d',
+                    backgroundColor: 'rgba(255, 243, 224, 0.5)',
+                    fill: true,
+                    tension: 0.3,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {display: true},
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return "₩ " + context.parsed.y.toLocaleString();
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {display: true, text: '시간'},
+                },
+                y: {
+                    title: {display: true, text: '매출액 (₩)'},
+                    beginAtZero: true,
+                    ticks: {
+                        callback: val => '₩' + val.toLocaleString()
+                    }
+                }
+            }
+        }
+    });
+</script>
+</html>

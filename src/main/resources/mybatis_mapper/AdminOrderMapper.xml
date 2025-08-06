@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cafe_kiosk.kiosk_admin.mapper.AdminOrderMapper">
+
+    <resultMap id="OrderWithItemsResultMap" type="com.cafe_kiosk.kiosk_admin.dto.order.Orders">
+        <id property="orderId" column="order_id"/>
+        <result property="phone" column="phone"/>
+        <result property="orderTime" column="order_time"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="status" column="status"/>
+        <result property="usedPoint" column="used_point"/>
+        <result property="earnedPoint" column="earned_point"/>
+        <result property="orderMethod" column="order_method"/>
+
+        <collection property="orderItemList" ofType="com.cafe_kiosk.kiosk_admin.dto.order.OrderItem">
+            <id property="orderItemId" column="order_item_id"/>
+            <result property="quantity" column="quantity"/>
+            <result property="price" column="price"/>
+            <result property="options" column="options"/>
+
+            <association property="menuDTO" javaType="com.cafe_kiosk.kiosk_admin.dto.MenuDTO">
+                <id property="menuId" column="menu_id"/>
+                <result property="name" column="menu_name"/>
+            </association>
+
+            <association property="option" javaType="com.cafe_kiosk.kiosk_admin.dto.MenuOption">
+                <id property="optionId" column="option_id"/>
+                <result property="optionName" column="option_name"/>
+                <result property="optionPrice" column="option_price"/>
+            </association>
+        </collection>
+    </resultMap>
+
+    <!-- 주문 목록 전체 조회 -->
+    <!-- order_item 컬럼에 options 추가 -->
+    <select id="selectOrdersWithItemsByStatus" resultMap="OrderWithItemsResultMap" parameterType="string">
+        SELECT
+        o.order_id,
+        o.phone,
+        o.order_time,
+        o.total_amount,
+        o.status,
+        o.used_point,
+        o.earned_point,
+        o.order_method,
+
+        oi.order_item_id,
+        oi.quantity,
+        oi.price,
+        oi.options,
+
+        m.menu_id,
+        m.name AS menu_name
+        FROM orders o
+        LEFT JOIN order_item oi ON o.order_id = oi.order_id
+        LEFT JOIN menu m ON oi.menu_id = m.menu_id
+        WHERE o.status = #{status}
+        ORDER BY o.order_time DESC
+    </select>
+
+
+    <!-- 주문 상태를 CANCELLED로 변경 -->
+    <update id="updateOrderStatusToCancelled" parameterType="int">
+        UPDATE orders
+        SET status = 'CANCELLED'
+        WHERE order_id = #{orderId}
+          AND status != 'CANCELLED'
+    </update>
+
+    <!-- 단건 주문 정보 조회 -->
+    <select id="selectOrderInfoById" parameterType="int" resultType="com.cafe_kiosk.kiosk_admin.dto.order.Orders">
+        SELECT order_id, phone, used_point, earned_point
+        FROM orders
+        WHERE order_id = #{orderId}
+    </select>
+
+    <!-- 사용자 포인트 원복 -->
+    <update id="updateUserPoints" parameterType="map">
+        UPDATE user
+        SET points = points + #{usedPoint} - #{earnedPoint}
+        WHERE phone = #{phone}
+    </update>
+
+    <!-- 주문 관련 포인트 내역 삭제 -->
+    <delete id="deletePointHistoryByOrderId" parameterType="int">
+        DELETE FROM point_history
+        WHERE order_id = #{orderId}
+    </delete>
+    <!-- 포인트 차감 -->
+    <update id="decreaseUserPoints" parameterType="map">
+        UPDATE user
+        SET points = points - #{amount}
+        WHERE phone = #{phone}
+    </update>
+
+    <!-- 포인트 증가 -->
+    <update id="increaseUserPoints" parameterType="map">
+        UPDATE user
+        SET points = points + #{amount}
+        WHERE phone = #{phone}
+    </update>
+
+    <!-- 포인트 내역 insert -->
+    <insert id="insertPointHistory" parameterType="map">
+        INSERT INTO point_history (user_id, phone, order_id, amount, point_type, created_at)
+        VALUES (#{userId}, #{phone}, #{orderId}, #{amount}, #{pointType}, NOW())
+    </insert>
+
+    <select id="selectOrdersByStatus" resultType="com.cafe_kiosk.kiosk_admin.dto.order.Orders">
+        SELECT * FROM orders
+        WHERE status = #{status} <!-- 자동으로 OrderStatus.name()이 사용됨 -->
+    </select>
+
+    <update id="updateOrderStatus" parameterType="map">
+        UPDATE orders
+        SET status = #{status}
+        WHERE order_id = #{orderId}
+    </update>
+
+</mapper>

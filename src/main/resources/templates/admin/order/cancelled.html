@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>주문 내역</title>
+</head>
+
+<main layout:fragment="content">
+    <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="container-fluid mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 fw-bold mb-0">주문 내역 조회</h1>
+            <span class="badge bg-dark fs-6">총 주문: <span th:text="${orderCount}">0</span>건</span>
+        </div>
+    </div>
+
+
+    <form class="row g-2 align-items-center mb-3" method="get" th:action="@{/admin/order/history}">
+        <div class="col-auto">
+            <input type="text" name="phone" class="form-control" placeholder="전화번호 검색" th:value="${param.phone}" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-outline-primary">검색</button>
+        </div>
+    </form>
+
+        <ul class="nav nav-pills mb-4">
+            <li class="nav-item">
+                <a class="nav-link " href="/admin/order/waiting">진행중</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/admin/order/complete">완료</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="/admin/order/cancelled">취소</a>
+            </li>
+        </ul>
+
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center">
+                <thead class="table-light">
+                <tr>
+                    <th>주문번호</th>
+                    <th>전화번호</th>
+                    <th>주문일시</th>
+                    <th>총 결제금액</th>
+                    <th>사용 포인트</th>
+                    <th>적립 포인트</th>
+                    <th>주문 방식</th>
+                    <th>상태</th>
+                    <th>주문 취소</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="order : ${orders}">
+                    <td>
+                        <a href="#"
+                           th:text="${order.orderId}"
+                           data-bs-toggle="modal"
+                           th:attr="data-bs-target='#orderModal__' + ${order.orderId}"></a>
+                    </td>
+                    <td th:text="${order.phone}">010-xxxx</td>
+                    <td th:text="${#temporals.format(order.orderTime, 'yyyy-MM-dd HH:mm')}">2025-07-30 14:30</td>
+                    <td th:text="${order.totalAmount}">5000</td>
+                    <td th:text="${order.usedPoint}">100</td>
+                    <td th:text="${order.earnedPoint}">50</td>
+                    <td th:text="${order.orderMethod}">KIOSK</td>
+                    <td th:text="${order.status}">COMPLETED</td>
+                    <td>
+                        <form th:action="@{/admin/order/cancel}" method="post" style="display:inline;">
+                            <input type="hidden" name="orderId" th:value="${order.orderId}" />
+                            <button type="submit"
+                                    class="btn btn-sm btn-danger"
+                                    onclick="return confirm('정말 이 주문을 취소하시겠습니까?')"
+                                    th:disabled="${order.status == 'CANCELLED'}">
+                                취소
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+
+                <tr th:if="${#lists.isEmpty(orders)}">
+                    <td colspan="9">주문 내역이 없습니다.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 주문 상세 모달 -->
+        <div th:each="order : ${orders}"
+             th:id="'orderModal__' + ${order.orderId}"
+             class="modal fade" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" th:text="'주문 상세 - 주문번호: ' + ${order.orderId}"></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table table-bordered">
+                            <thead class="table-secondary">
+                            <tr>
+                                <th>메뉴명</th>
+                                <th>옵션</th>
+                                <th>수량</th>
+                                <th>가격</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="item : ${order.orderItemList}">
+                                <td th:text="${item.menuDTO.name}">아메리카노</td>
+                                <td>
+  <span th:each="opt : ${item.optionList}">
+    <span th:text="|${opt.optionName} (+${#numbers.formatInteger(opt.optionPrice, 3, 'COMMA')}원)|"></span><br/>
+  </span>
+                                </td>
+                                <td th:text="${item.quantity}">2</td>
+                                <td th:text="|${item.price}원|">5000원</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</main>
+
+<script layout:fragment="script" th:inline="javascript">
+</script>
+
+</html>

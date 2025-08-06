@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cafe_kiosk.kiosk_admin.mapper.AdminLogMapper">
+    <insert id="insertAdminLog" parameterType="com.cafe_kiosk.kiosk_admin.dto.log.AdminLog">
+        INSERT INTO admin_log (action_type, target_id, target_table, admin_id, description, created_at)
+        VALUES (#{actionType}, #{targetId}, #{targetTable}, #{adminId},#{description}, NOW())
+    </insert>
+    <select id="getAllAdminLogs" resultType="com.cafe_kiosk.kiosk_admin.dto.log.AdminLog" parameterType="map">
+        SELECT log_id, action_type, target_id, target_table, admin_id, description, created_at
+        FROM admin_log
+        WHERE 1=1
+        <if test="adminId != null and adminId != ''">
+            AND admin_id = #{adminId}
+        </if>
+        <if test="targetTable != null and targetTable != ''">
+            AND target_table = #{targetTable}
+        </if>
+        <if test="actionType != null and actionType != ''">
+            AND action_type = #{actionType}
+        </if>
+        <if test="startDate != null and endDate != null">
+            AND created_at BETWEEN #{startDate} AND #{endDate}
+        </if>
+        <choose>
+            <when test="sortOrder != null and sortOrder == 'asc'">
+                ORDER BY log_id ASC
+            </when>
+            <otherwise>
+                ORDER BY log_id DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="countAdminLogs" resultType="int" parameterType="map">
+        SELECT COUNT(*)
+        FROM admin_log
+        WHERE 1=1
+        <if test="adminId != null and adminId != ''">
+            AND admin_id = #{adminId}
+        </if>
+        <if test="targetTable != null and targetTable != ''">
+            AND target_table = #{targetTable}
+        </if>
+        <if test="actionType != null and actionType != ''">
+            AND action_type = #{actionType}
+        </if>
+        <if test="startDate != null and endDate != null">
+            AND created_at BETWEEN #{startDate} AND #{endDate}
+        </if>
+        <if test="startDate != null and endDate == null">
+            AND created_at &gt;= #{startDate}
+        </if>
+        <if test="startDate == null and endDate != null">
+            AND created_at &lt;= #{endDate}
+        </if>
+    </select>
+
+
+    <select id="getTenHistory" resultType="com.cafe_kiosk.kiosk_admin.dto.log.AdminLog">
+        SELECT log_id, action_type, target_id, target_table, admin_id, description, created_at
+        FROM admin_log
+        ORDER BY created_at DESC LIMIT 10
+    </select>
+
+
+    <select id="countLogsByAdminId" resultType="com.cafe_kiosk.kiosk_admin.dto.log.chart.CountLogByAdmin">
+        SELECT admin_id, COUNT(*) AS log_count
+        FROM admin_log
+        GROUP BY admin_id
+        ORDER BY log_count DESC
+    </select>
+
+    <select id="countLogsByMonth" resultType="com.cafe_kiosk.kiosk_admin.dto.log.chart.CountLogByMonth">
+        SELECT DATE_FORMAT(created_at, '%Y-%m') AS month, COUNT(*) AS log_count
+        FROM admin_log
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 4 WEEK)
+        GROUP BY month
+        ORDER BY month ASC
+    </select>
+
+    <select id="countLogsByActionType" resultType="com.cafe_kiosk.kiosk_admin.dto.log.chart.CountLogByActionType">
+        SELECT action_type, COUNT(*) AS log_count
+        FROM admin_log
+        GROUP BY action_type
+        ORDER BY log_count DESC
+    </select>
+
+    <select id="countLogsByWeekAdminId" resultType="com.cafe_kiosk.kiosk_admin.dto.log.chart.CountLogByWeek" parameterType="string">
+        SELECT DATE(created_at) AS week, COUNT(*) AS log_count
+        FROM admin_log
+        WHERE admin_id = #{adminId}
+          AND created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        GROUP BY DATE(created_at)
+        ORDER BY DATE(created_at)
+    </select>
+
+
+</mapper>

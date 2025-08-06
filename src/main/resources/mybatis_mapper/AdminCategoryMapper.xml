@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cafe_kiosk.kiosk_admin.mapper.AdminCategoryMapper">
+    <select id="getAllCategory" resultType="com.cafe_kiosk.kiosk_admin.dto.category.Category">
+        SELECT * FROM category
+    </select>
+    <insert id="insertCategory" parameterType="com.cafe_kiosk.kiosk_admin.dto.category.Category">
+        INSERT INTO category (name, description) VALUES (#{name}, #{description})
+    </insert>
+
+    <select id="getCategoryById" resultType="com.cafe_kiosk.kiosk_admin.dto.category.Category">
+        SELECT * FROM category WHERE category_id = #{categoryId}
+    </select>
+
+    <select id="existsCategoryByName" resultType="boolean" parameterType="string">
+        SELECT EXISTS(SELECT 1 FROM category WHERE name = #{name})
+    </select>
+</mapper>

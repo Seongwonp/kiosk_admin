@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cafe_kiosk.kiosk_admin.mapper.AdminHistoryMapper">
+
+    <insert id="insertLog">
+
+    </insert>
+
+
+    <select id="adminLogList" parameterType="map" resultType="com.cafe_kiosk.kiosk_admin.dto.log.AdminLog">
+        SELECT
+        l.log_id,
+        a.admin_id,
+        a.admin_role AS role,
+        l.action_type,
+        l.target_table,
+        l.target_id,
+        l.created_at
+        FROM admin_log l
+        JOIN admin a ON l.admin_id = a.admin_id
+        <where>
+            <if test="adminId != null and adminId != ''">
+                a.admin_id = #{adminId}
+            </if>
+            <if test="role != null and role != ''">
+                a.admin_role = #{role}
+            </if>
+            <if test="actionType != null and actionType != ''">
+                l.action_type = #{actionType}
+            </if>
+            <if test="targetTable != null and targetTable != ''">
+                l.target_table = #{targetTable}
+            </if>
+            <if test="startDate != null">
+                l.created_at &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                l.created_at &lt;= #{endDate}
+            </if>
+        </where>
+        ORDER BY l.created_at DESC
+    </select>
+
+
+
+</mapper>

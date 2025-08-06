@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>매출 현황</title>
+    <style>
+        .btn-outline-warning:hover {
+            background-color: #ffc107;
+            color: #212529;
+            border-color: #ffc107;
+        }
+    </style>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <h3 class="mb-4"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <form method="get" action="/admin/sales/weekly" class="row g-3 align-items-end">
+            <div class="col-auto">
+                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>
+                <input type="date" name="startDate" th:value="${searchDTO.startDate}" class="form-control">
+            </div>
+            <div class="col-auto">
+                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>
+                <input type="date" name="endDate" th:value="${searchDTO.endDate}" class="form-control">
+            </div>
+            <div class="col-auto">
+                <label class="form-label"><i class="bi bi-filter-square me-1"></i>검색 조건</label>
+                <select name="searchType" class="form-select">
+                    <option value="categoryName" th:selected="${searchDTO.searchType == 'categoryName'}">카테고리명</option>
+                    <option value="menuName" th:selected="${searchDTO.searchType == 'menuName'}">상품명</option>
+                </select>
+            </div>
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-search me-1"></i>검색어</label>
+                <input type="text" name="keyword" placeholder="검색어 입력" th:value="${searchDTO.keyword}" class="form-control">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+            </div>
+        </form>
+    </div>
+
+
+
+    <div class="mb-4">
+        <a href="/admin/sales/daily" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar-day me-1"></i>일별</a>
+        <a href="/admin/sales/monthly" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
+        <a href="/admin/sales/weekly" class="btn btn-warning text-dark custom-hover-dark me-2 active" aria-current="page"><i class="bi bi-calendar-week me-1"></i>요일별</a>
+        <a href="/admin/sales/hourly" class="btn btn-outline-warning "><i class="bi bi-clock-history me-1"></i>시간대별</a>
+    </div>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <h6 class="card-title mb-3"><i class="bi bi-graph-up-arrow me-2"></i>일별 매출 차트</h6>
+        <div class="d-flex justify-content-between mb-3">
+            <p class="text-muted mb-3">
+                <i class="bi bi-calendar-event me-1"></i>
+                오늘 날짜: <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">2025-07-31</span>
+            </p>
+
+        </div>
+        <canvas id="weeklySalesChart" style="max-width: 100%; height: 500px;"></canvas>
+    </div>
+
+
+    <div class="card mt-4 p-4 mb-4 shadow-sm">
+        <h6 class="card-title mb-3"><i class="bi bi-list-ul me-2"></i>요일별 매출 상세 리스트</h6>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover align-middle text-center">
+                <thead class="table-light">
+                <tr>
+                    <th>요일</th>
+                    <th>주문 수 (건)</th>
+                    <th>매출액 (₩)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${weeklySales == null or #lists.isEmpty(weeklySales)}">
+                    <td colspan="3" class="text-center text-muted">검색 결과가 없습니다.</td>
+                </tr>
+                <tr th:each="item : ${weeklySales}">
+                    <td th:text="${item.dayOfWeek}">2025-07-01</td>
+                    <td th:text="${item.orderCount}">12</td>
+                    <td th:text="${#numbers.formatInteger(item.totalSales, 0, 'COMMA')}">9,300</td>
+                </tr>
+                </tbody>
+                <tfoot th:if="${weeklySales != null and !#lists.isEmpty(weeklySales)}">
+                <tr class="fw-bold">
+                    <td>합계</td>
+                    <td th:text="${totalOrders}">0</td>
+                    <td th:text="${#numbers.formatInteger(totalSales, 0, 'COMMA')}">0</td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+
+<script layout:fragment="script" th:inline="javascript">
+    let SalesData = /*[[${weeklySales}]]*/ [];
+
+    if (SalesData && SalesData.length > 0) {
+        const fullWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        const salesMap = {};
+        const orderMap = {};
+
+        SalesData.forEach(s => {
+            salesMap[s.dayOfWeek] = s.totalSales;
+            orderMap[s.dayOfWeek] = s.orderCount;
+        });
+
+        const labels = fullWeek;
+        const sales = fullWeek.map(day => salesMap[day] || 0);
+        const orderCounts = fullWeek.map(day => orderMap[day] || 0);
+
+        const ctx = document.getElementById('weeklySalesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '총 매출 (₩)',
+                    data: sales,
+                    backgroundColor: '#4CAF50',
+                    barThickness: 30,
+                    yAxisID: 'y1'
+                }, {
+                    label: '주문 수',
+                    data: orderCounts,
+                    backgroundColor: '#FFC107',
+                    barThickness: 30,
+                    yAxisID: 'y2'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { enabled: true }
+                },
+                scales: {
+                    x: { title: { display: true, text: '요일' } },
+                    y1: {
+                        position: 'left',
+                        title: { display: true, text: '매출액 (₩)' },
+                        beginAtZero: true
+                    },
+                    y2: {
+                        position: 'right',
+                        title: { display: true, text: '주문 수 (건)' },
+                        beginAtZero: true,
+                        grid: { drawOnChartArea: false } // 오른쪽 축 그리드 숨김
+                    }
+                }
+
+            }
+        });
+    } else {
+        console.log("요일별 매출 데이터 없음!");
+    }
+
+
+</script>
+</body>
+</html>

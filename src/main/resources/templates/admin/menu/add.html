@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>메뉴 추가</title>
+    <style>
+        h2 {
+            color: #ffb700;
+            font-weight: bold;
+        }
+
+        .form-label {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #ffb700;
+            box-shadow: 0 0 0 0.2rem rgba(255, 183, 0, 0.25);
+        }
+
+        button.btn-primary {
+            background-color: #ffb700;
+            border-color: #ffb700;
+        }
+
+        button.btn-primary:hover {
+            background-color: #e6a600;
+            border-color: #e6a600;
+        }
+
+        button.btn-secondary:hover {
+            background-color: #333;
+            border-color: #333;
+        }
+
+        .container {
+            background-color: #fffbea;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <div class="container mt-5 border p-4 shadow-sm bg-light rounded" style="max-width: 700px;">
+        <h2 class="mb-4 text-warning fw-bold">🍽️ 메뉴 등록</h2>
+        <form th:action="@{/admin/menu/add}" method="post" enctype="multipart/form-data">
+
+            <div class="mb-3">
+                <label for="name" class="form-label">메뉴 이름</label>
+                <input type="text" class="form-control border border-warning-subtle" id="name" name="name"
+                       placeholder="예: 아메리카노" required>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="price" class="form-label">가격</label>
+                    <input type="number" class="form-control" id="price" name="price" placeholder="₩" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="stock" class="form-label">재고 수량</label>
+                    <input type="number" class="form-control" id="stock" name="stock" placeholder="10" required>
+                </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+                <label for="categoryId" class="form-label">카테고리</label>
+                <select class="form-select" id="categoryId" name="categoryId" required>
+                    <option th:each="cat : ${categoryList}" th:value="${cat.categoryId}" th:text="${cat.name}">카테고리 선택</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="imageFile" class="form-label">이미지 업로드</label>
+                <input class="form-control" type="file" id="imageFile" name="imageFile" onchange="previewMenuImage(this)">
+                <div class="mt-2">
+                    <img id="menuPreview" class="img-thumbnail d-none" style="max-height:150px;" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="isSoldOutToggle" class="form-label">품절 여부</label>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="isSoldOutToggle" name="isSoldOut" value="true">
+                    <label class="form-check-label" for="isSoldOutToggle">품절</label>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <button type="submit" class="btn btn-warning fw-bold"><i class="bi bi-plus-circle"></i> 등록하기</button>
+                <a th:href="@{/admin/menu/list}" class="btn btn-outline-dark ms-2">목록으로</a>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script layout:fragment="script" th:inline="javascript">
+    // 스크립트는 여기에
+</script>
+</body>
+</html>

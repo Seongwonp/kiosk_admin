@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cafe_kiosk.kiosk_admin.mapper.AdminMapper">
+
+    <!-- 1. 일별 매출 -->
+    <select id="getDailySales" parameterType="com.cafe_kiosk.kiosk_admin.dto.search.SalesSearchDTO" resultType="com.cafe_kiosk.kiosk_admin.dto.sales.DailySalesDTO">
+        SELECT DATE(o.order_time) AS date,
+        SUM(oi.price * oi.quantity) AS totalSales,
+        COUNT(DISTINCT o.order_id) AS orderCount
+        FROM orders o
+        JOIN order_item oi ON o.order_id = oi.order_id
+        JOIN menu m ON oi.menu_id = m.menu_id
+        JOIN category c ON m.category_id = c.category_id
+        <where>
+            AND o.status = 'COMPLETE'
+            <if test="startDate != null and startDate != ''">
+                AND DATE(o.order_time) &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND DATE(o.order_time) &lt;= #{endDate}
+            </if>
+            <if test="searchType != null and searchType == 'menuName' and keyword != null and keyword != ''">
+                AND m.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="searchType != null and searchType == 'categoryName' and keyword != null and keyword != ''">
+                AND c.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        GROUP BY DATE(o.order_time)
+        ORDER BY date DESC
+    </select>
+
+    <!-- 2. 월별 매출 -->
+    <select id="getMonthlySales" parameterType="com.cafe_kiosk.kiosk_admin.dto.search.SalesSearchDTO" resultType="com.cafe_kiosk.kiosk_admin.dto.sales.MonthlySalesDTO">
+        SELECT DATE_FORMAT(o.order_time, '%Y-%m') AS month,
+        SUM(oi.price * oi.quantity) AS totalSales,
+        COUNT(DISTINCT o.order_id) AS orderCount
+        FROM orders o
+        JOIN order_item oi ON o.order_id = oi.order_id
+        JOIN menu m ON oi.menu_id = m.menu_id
+        JOIN category c ON m.category_id = c.category_id
+        <where>
+            AND o.status = 'COMPLETE'
+            <if test="startDate != null and startDate != ''">
+                AND DATE(o.order_time) &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND DATE(o.order_time) &lt;= #{endDate}
+            </if>
+            <if test="searchType != null and searchType == 'menuName' and keyword != null and keyword != ''">
+                AND m.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="searchType != null and searchType == 'categoryName' and keyword != null and keyword != ''">
+                AND c.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        GROUP BY DATE_FORMAT(o.order_time, '%Y-%m')
+        ORDER BY month DESC
+    </select>
+
+    <!-- 3. 요일별 매출 -->
+    <select id="getWeeklySales" parameterType="com.cafe_kiosk.kiosk_admin.dto.search.SalesSearchDTO" resultType="com.cafe_kiosk.kiosk_admin.dto.sales.WeeklySalesDTO">
+        SELECT DAYNAME(o.order_time) AS dayOfWeek,
+        SUM(oi.price * oi.quantity) AS totalSales,
+        COUNT(DISTINCT o.order_id) AS orderCount
+        FROM orders o
+        JOIN order_item oi ON o.order_id = oi.order_id
+        JOIN menu m ON oi.menu_id = m.menu_id
+        JOIN category c ON m.category_id = c.category_id
+        <where>
+            AND o.status = 'COMPLETE'
+            <if test="startDate != null and startDate != ''">
+                AND DATE(o.order_time) &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND DATE(o.order_time) &lt;= #{endDate}
+            </if>
+            <if test="searchType != null and searchType == 'menuName' and keyword != null and keyword != ''">
+                AND m.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="searchType != null and searchType == 'categoryName' and keyword != null and keyword != ''">
+                AND c.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        GROUP BY DAYNAME(o.order_time)
+        ORDER BY FIELD(dayOfWeek, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+    </select>
+
+    <!-- 4. 시간대별 매출 -->
+    <select id="getHourlySales" parameterType="com.cafe_kiosk.kiosk_admin.dto.search.SalesSearchDTO" resultType="com.cafe_kiosk.kiosk_admin.dto.sales.HourlySalesDTO">
+        SELECT HOUR(o.order_time) AS hour,
+        SUM(oi.price * oi.quantity) AS totalSales,
+        COUNT(DISTINCT o.order_id) AS orderCount
+        FROM orders o
+        JOIN order_item oi ON o.order_id = oi.order_id
+        JOIN menu m ON oi.menu_id = m.menu_id
+        JOIN category c ON m.category_id = c.category_id
+        <where>
+            AND o.status = 'COMPLETE'
+            <if test="startDate != null and startDate != ''">
+                AND DATE(o.order_time) &gt;= #{startDate}
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND DATE(o.order_time) &lt;= #{endDate}
+            </if>
+            <if test="searchType != null and searchType == 'menuName' and keyword != null and keyword != ''">
+                AND m.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="searchType != null and searchType == 'categoryName' and keyword != null and keyword != ''">
+                AND c.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        GROUP BY HOUR(o.order_time)
+        ORDER BY hour ASC
+        <if test="limit != null and offset != null">
+            LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <select id="selectTodaySales" resultType="long">
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM orders
+        WHERE DATE(order_time) = CURDATE()
+          AND status = 'COMPLETE'
+    </select>
+
+    <select id="selectThisMonthSales" resultType="long">
+        SELECT COALESCE(SUM(total_amount), 0)
+        FROM orders
+        WHERE DATE_FORMAT(order_time, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')
+          AND status = 'COMPLETE'
+    </select>
+
+    <!-- 5. 품절 상품 조회 -->
+    <select id="getSoldOutProducts" resultType="com.cafe_kiosk.kiosk_admin.dto.MenuDTO">
+        SELECT menu_id, name, stock, price
+        FROM menu
+        WHERE stock = 0
+        ORDER BY name
+    </select>
+</mapper>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>대시보드</title>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+
+<body>
+<main layout:fragment="content">
+    <div style="display: flex; justify-content: center; align-items: center; height: calc(100vh - 80px);">
+        <div class="text-center">
+        <h2 class="fw-bold display-3" style="letter-spacing: -1px;" data-aos="fade-down" data-aos-delay="200">
+            👋 환영합니다, <span class="text-primary" th:text="${currentAdmin.adminId}">관리자</span>님!
+        </h2>
+        <p class="fs-4 mt-3" data-aos="fade-up" data-aos-delay="400">
+            오늘도 좋은 하루 되세요 ☕ <br />
+            <small class="text-muted">카페 키오스크 관리자 페이지에 오신 것을 환영합니다.</small>
+        </p>
+
+        <!-- 여기 날짜/시간 표시 -->
+        <p class="fs-5 mt-5" id="currentDateTime" style="font-weight: 500;"></p>
+        </div>
+    </div>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+</main>
+    <script layout:fragment="script" th:inline="javascript">
+        AOS.init();
+
+        function updateDateTime() {
+            const now = new Date();
+            // 예: 2025-08-01 15:25:30 형태로 포맷팅
+            const formatted = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0') + ' ' +
+                String(now.getHours()).padStart(2, '0') + ':' +
+                String(now.getMinutes()).padStart(2, '0') + ':' +
+                String(now.getSeconds()).padStart(2, '0');
+
+            document.getElementById('currentDateTime').textContent = formatted;
+        }
+
+        // 페이지 로드 후 바로 실행 & 1초마다 반복
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+<head>
+    <title>포인트 적립 내역 조회</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <h5 class="mb-4">📋 포인트 적립 내역 조회</h5>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <form method="get" th:action="@{/admin/point/list}" class="mb-3">
+                <div class="input-group">
+                    <input type="text" name="phone" class="form-control" placeholder="전화번호 입력"
+                           th:value="${phone}">
+                    <button type="submit" class="btn btn-primary">검색</button>
+                </div>
+            </form>
+
+            <div th:if="${user != null}" class="card border-primary shadow-sm mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">고객 정보</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>전화번호:</strong> <span th:text="${user.phone}"></span></p>
+                    <p><strong>현재 포인트:</strong> <span th:text="${user.points}"></span> 원</p>
+                    <p class="text-success" th:if="${todaySavedPoint != null}">
+                        <strong>오늘 적립:</strong> <span th:text="${todaySavedPoint}"></span> 원
+                    </p>
+                    <p class="text-danger" th:if="${todayUsedPoint != null}">
+                        <strong>오늘 사용:</strong> <span th:text="${todayUsedPoint}"></span> 원
+                    </p>
+                </div>
+            </div>
+
+            <!-- 설정 버튼 -->
+            <button type="button" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#addPointModal">
+                포인트 설정하기
+            </button>
+
+            <div th:if="${todayEarnedPoint != null}" class="my-4" style="max-width: 300px; margin: 0 auto; height: 200px;">
+                <h6>📈 오늘 포인트 적립/사용 현황</h6>
+                <canvas id="pointChart" width="600" height="400" style="display: block; max-width: 100%; height: auto;"></canvas>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 포인트 내역 -->
+        <div class="col-md-8">
+            <div th:if="${result != null}">
+                <div th:if="${result}" class="alert alert-success">✅ 포인트 적용 성공!</div>
+                <div th:unless="${result}" class="alert alert-danger">❌ 포인트 적용 실패. 다시 시도해주세요.</div>
+            </div>
+
+            <div th:if="${histories != null}">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                    <tr>
+                        <th>일시</th>
+                        <th>전화번호</th>
+                        <th>적립/사용</th>
+                        <th>포인트</th>
+                        <th>삭제</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="history : ${histories}">
+                        <td th:text="${#temporals.format(history.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                        <td th:text="${history.phone}"></td>
+                        <td>
+                <span th:classappend="${history.pointType == 'SAVE'} ? 'text-success' : 'text-danger'"
+                      th:text="${history.pointType}">
+                </span>
+                        </td>
+                        <td th:text="${history.amount}"></td>
+                        <td>
+                            <form th:action="@{/admin/point/history/delete}" method="post" style="display:inline;">
+                                <input type="hidden" name="pointHistoryId" th:value="${history.pointHistoryId}" />
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('정말 삭제하시겠습니까?');">삭제</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+
+            <div th:if="${histories == null}">
+                <p class="text-muted">📱 전화번호로 적립 내역을 검색하세요.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 포인트 추가 모달 -->
+    <div class="modal fade" id="addPointModal" tabindex="-1" aria-labelledby="addPointModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <form method="post" th:action="@{/admin/point/apply}" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPointModalLabel">포인트 추가/사용</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="phoneInput" class="form-label">전화번호</label>
+                        <input type="text" id="phoneInput" name="phone" class="form-control" th:value="${phone}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amountInput" class="form-label">포인트</label>
+                        <input type="number" id="amountInput" name="amount" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="pointTypeSelect" class="form-label">적립/사용</label>
+                        <select id="pointTypeSelect" name="pointType" class="form-select" required>
+                            <option value="SAVE">적립</option>
+                            <option value="USE">사용</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">적용</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+<script layout:fragment="script" th:inline="javascript">
+    /*<![CDATA[*/
+    const earnedPoint = [[${todayEarnedPoint}]] || 0;
+    const usedPoint = [[${todayUsedPoint}]] || 0;
+
+    const ctx = document.getElementById('pointChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['오늘 포인트'],
+            datasets: [
+                {
+                    label: '적립된 포인트 (P)',
+                    data: [earnedPoint],
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: '사용한 포인트 (P)',
+                    data: [usedPoint],
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    barThickness: 20,
+                    categoryPercentage: 0.6
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 500 }
+                }
+            },
+            plugins: {
+                legend: { display: true }
+            }
+        }
+    });
+    /*]]>*/
+</script>
+
+
+</body>
+</html>

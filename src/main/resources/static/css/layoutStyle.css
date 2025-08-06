@@ -1,0 +1,70 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f1f3f5;
+    color: #000;
+}
+
+.navbar {
+    background-color: #592f1b;
+}
+.navbar-brand,
+.navbar .bi {
+    color: #ffffff;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.sidebar-scroll {
+    max-height: calc(100vh - 310px); /* 헤더 + 프로필 + 푸터 제외 */
+    overflow-y: auto;
+}
+
+.sidebar-footer {
+    flex-shrink: 0;
+    border-top: 1px solid #6d4c41;
+    padding: 1rem;
+    font-size: 13px;
+    color: #bdbdbd;
+    text-align: center;
+}
+
+.nav.flex-column {
+    margin-top: 1rem;
+}
+
+.collapse .nav-link {
+    padding-left: 24px;
+    font-size: 13px;
+    color: #865a43;
+}
+
+.collapse .nav-item {
+    color: black;
+}
+
+.collapse .nav-link:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: #efaf95;
+}
+
+.nav-link.active {
+    color: #ff6f00;
+    font-weight: bold;
+}
+
+main.container-fluid {
+    min-height: calc(100vh - 56px);
+    background-color: #f8f9fa;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
+    background-color: #fff;
+}
+
+.card-title {
+    color: #ff6f00;
+    font-weight: 600;
+}

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cafe_kiosk.kiosk_admin.mapper.AdminPointMapper">
+
+    <!-- userDTO 매핑용 resultMap -->
+    <resultMap id="UserResultMap" type="com.cafe_kiosk.kiosk_admin.dto.point.UserDTO">
+        <id property="userId" column="user_id"/>
+        <result property="phone" column="phone"/>
+        <result property="points" column="points"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="modifiedAt" column="modified_at"/>
+    </resultMap>
+
+    <!-- order 매핑용 resultMap -->
+    <resultMap id="OrderResultMap" type="com.cafe_kiosk.kiosk_admin.dto.order.Orders">
+        <id property="orderId" column="order_id"/>
+        <result property="phone" column="phone"/>
+        <result property="orderTime" column="order_time"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="status" column="status"/>
+        <result property="usedPoint" column="used_point"/>
+        <result property="earnedPoint" column="earned_point"/>
+        <result property="orderMethod" column="order_method"/>
+    </resultMap>
+
+    <!-- PointHistoryDTO 전체 매핑 -->
+    <resultMap id="PointHistoryResultMap" type="com.cafe_kiosk.kiosk_admin.dto.point.PointHistoryDTO">
+        <id property="pointHistoryId" column="point_history_id"/>
+        <result property="phone" column="ph_phone"/>
+        <result property="amount" column="amount"/>
+        <result property="pointType" column="point_type"/>
+        <result property="createdAt" column="ph_created_at"/>
+        <result property="modifiedAt" column="ph_modified_at"/>
+
+        <association property="userDTO" column="user_id" javaType="com.cafe_kiosk.kiosk_admin.dto.point.UserDTO" select="selectUserById"/>
+        <association property="order" column="order_id" javaType="com.cafe_kiosk.kiosk_admin.dto.order.Orders" select="selectOrderById"/>
+    </resultMap>
+
+    <!-- 전화번호로 유저 조회 -->
+    <select id="selectUserByPhone" resultMap="UserResultMap" parameterType="string">
+        SELECT user_id, phone, points, created_at, modified_at
+        FROM user
+        WHERE phone = #{phone}
+    </select>
+
+    <!-- 유저 아이디로 유저 조회 (association 용) -->
+    <select id="selectUserById" resultMap="UserResultMap" parameterType="int">
+        SELECT user_id, phone, points, created_at, modified_at
+        FROM user
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 주문 아이디로 주문 조회 (association 용) -->
+    <select id="selectOrderById" resultMap="OrderResultMap" parameterType="int">
+        SELECT order_id, phone, order_time, total_amount, status, used_point, earned_point, order_method
+        FROM orders
+        WHERE order_id = #{orderId}
+    </select>
+
+    <!-- 포인트 히스토리 리스트 조회 (전화번호 기준) -->
+    <select id="selectPointHistoriesByPhone" resultMap="PointHistoryResultMap" parameterType="string">
+        SELECT
+            ph.point_history_id,
+            ph.phone AS ph_phone,
+            ph.amount,
+            ph.point_type,
+            ph.created_at AS ph_created_at,
+            ph.modified_at AS ph_modified_at,
+            ph.user_id,
+            ph.order_id
+        FROM point_history ph
+        WHERE ph.phone = #{phone}
+        ORDER BY ph.created_at DESC
+    </select>
+
+    <!-- 포인트 히스토리 전체 내역 조회 -->
+    <select id="selectAllPointHistories" resultMap="PointHistoryResultMap">
+        SELECT
+            ph.point_history_id,
+            ph.phone AS ph_phone,
+            ph.amount,
+            ph.point_type,
+            ph.created_at AS ph_created_at,
+            ph.modified_at AS ph_modified_at,
+            ph.user_id,
+            ph.order_id
+        FROM point_history ph
+        ORDER BY ph.created_at DESC
+    </select>
+
+    <!-- 유저 포인트 수정 -->
+    <update id="updateUserPoints">
+        UPDATE user
+        SET points = #{points},
+            modified_at = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 포인트 히스토리 저장 -->
+    <insert id="insertPointHistory" parameterType="com.cafe_kiosk.kiosk_admin.dto.point.PointHistoryDTO">
+        INSERT INTO point_history (
+            user_id, phone, order_id, amount, point_type, created_at, modified_at
+        ) VALUES (
+                     #{userDTO.userId},
+                     #{phone},
+                     #{order.orderId},
+                     #{amount},
+                     #{pointType},
+                     NOW(),
+                     NOW()
+                 )
+    </insert>
+<!--    삭제-->
+    <delete id="deletePointHistoryById" parameterType="long">
+        DELETE FROM point_history WHERE point_history_id = #{pointHistoryId}
+    </delete>
+
+<!--    오늘 사용한 포인트 조회 -->
+    <select id="selectTodayUsedPointByPhone" resultType="int" parameterType="string">
+        SELECT IFNULL(SUM(amount), 0)
+        FROM point_history
+        WHERE phone = #{phone}
+          AND point_type = 'USE'
+          AND DATE(created_at) = CURDATE()
+    </select>
+
+<!--    오늘 적립한 포인트 조회-->
+    <select id="selectTodaySavedPointByPhone" resultType="int" parameterType="string">
+        SELECT IFNULL(SUM(amount), 0)
+        FROM point_history
+        WHERE phone = #{phone}
+          AND point_type = 'SAVE'
+          AND DATE(created_at) = CURDATE()
+    </select>
+</mapper>

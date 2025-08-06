@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>관리자 계정 목록</title>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <div th:if="${success == 'true'}" class="alert alert-success alert-dismissible fade show" role="alert">
+      수정되었습니다!
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="닫기"></button>
+    </div>
+    <h5 class="mb-4">👥 관리자 계정 목록</h5>
+
+    <!-- 검색 필터 -->
+    <form method="get" action="/admin/user/list" class="d-flex mb-4">
+        <select name="op" class="form-select me-2" style="width: 150px;">
+            <option value="id" th:selected="${op == 'id'}">아이디</option>
+            <option value="name" th:selected="${op == 'name'}">이름</option>
+            <option value="role" th:selected="${op == 'role'}">권한</option>
+        </select>
+        <input type="text" name="keyword" class="form-control me-2" placeholder="검색어 입력" th:value="${keyword}">
+        <button type="submit" class="btn btn-outline-primary">검색</button>
+    </form>
+    <button th:if="${currentAdmin.adminRole.name() == 'CEO' or currentAdmin.adminRole.name() == 'MANAGER'}"
+    class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+        관리자 추가
+    </button>
+    <!-- 관리자 리스트 -->
+    <div class="card p-4 shadow-sm">
+        <h6 class="card-title">계정 리스트</h6>
+        <!-- 권한 비율 차트 -->
+        <div class="my-4">
+            <h6 class="mb-2">권한 비율 차트</h6>
+            <div style="max-width: 300px; margin: 0 auto;">
+                <canvas id="roleChart"></canvas>
+            </div>
+        </div>
+
+        <table class="table table-sm table-striped text-center align-middle mt-3">
+            <thead class="table-light">
+            <tr>
+                <th>아이디</th>
+                <th>권한</th>
+                <th>생성일</th>
+                <th>수정일</th>
+                <th>수정</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="admin : ${adminList}">
+                <td th:text="${admin.adminId}">admin01</td>
+                <td th:text="${admin.adminRole}">MANAGER</td>
+                <td th:text="${#temporals.format(admin.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+                <td th:text="${#temporals.format(admin.modifiedAt, 'yyyy-MM-dd HH:mm')}"></td>
+                <td>
+                    <a th:if="${currentAdmin.adminRole.name() == 'CEO' or currentAdmin.adminId == admin.adminId}"
+                       th:href="@{/admin/user/modify(adminId=${admin.adminId})}"
+                       class="btn btn-sm btn-outline-primary">수정</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <p class="mt-3">총 관리자 수: <span th:text="${#lists.size(adminList)}"></span></p>
+        <!-- 관리자 추가 모달 -->
+        <div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminModalLabel" aria-hidden="true">
+          <div class="modal-dialog">
+            <form th:action="@{/admin/user/register}" method="post" class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="addAdminModalLabel">관리자 등록</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+              </div>
+              <div class="modal-body">
+                <div class="mb-3">
+                  <label for="adminId" class="form-label">아이디</label>
+                  <input type="text" class="form-control" id="adminId" name="adminId" required>
+                </div>
+                <div class="mb-3">
+                    <label for="adminPw" class="form-label">비밀번호</label>
+                  <input type="password" class="form-control" id="adminPw" name="adminPw" required>
+                </div>
+                <div class="mb-3">
+                  <label for="adminRole" class="form-label">권한</label>
+                  <select class="form-select" id="adminRole" name="adminRole" required>
+                    <option value="STAFF">STAFF</option>
+                    <option value="MANAGER">MANAGER</option>
+                    <option value="CEO">CEO</option>
+                  </select>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="submit" class="btn btn-primary">등록</button>
+              </div>
+            </form>
+          </div>
+        </div>
+    </div>
+</main>
+<script layout:fragment="script" th:inline="javascript">
+    /*<![CDATA[*/
+    const roleStats = /*[[${roleStats}]]*/ [];
+    console.log(roleStats);
+    const labels = roleStats.map(r => r.adminRole);
+    const counts = roleStats.map(r => r.cnt);
+
+    const ctx = document.getElementById('roleChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '권한 비율',
+                data: counts,
+                backgroundColor: [
+                    '#ffc107', // CEO - yellow
+                    '#20c997', // MANAGER - teal
+                    '#6f42c1'  // STAFF - purple
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    setTimeout(() => {
+        const alertEl = document.querySelector('.alert.alert-success');
+        if (alertEl) {
+            alertEl.classList.remove('show');
+            alertEl.classList.add('fade');
+            setTimeout(() => alertEl.remove(), 300); // DOM 에서도 제거
+        }
+    }, 3000); // 3초 후 사라지게
+    /*]]>*/
+</script>
+</body>
+</html>

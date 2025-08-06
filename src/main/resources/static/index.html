@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coffee Admin</title>
+
+  <!-- Bootstrap & Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/layoutStyle.css" />
+</head>
+
+<body>
+
+<!-- 상단 헤더 -->
+<nav class="navbar navbar-expand-lg navbar-dark px-4" style="background-color: #592f1b;">
+  <a class="navbar-brand" href="/admin/main">Coffee Admin</a>
+
+  <div class="ms-auto d-flex align-items-center gap-3">
+    <a href="/admin/notifications" class="text-white position-relative">
+      <i class="bi bi-bell fs-5"></i>
+      <!-- 예: 알림 뱃지 -->
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span>
+    </a>
+    <a href="/admin/settings" class="text-white"><i class="bi bi-gear fs-5"></i></a>
+
+    <!-- 프로필 드롭다운 -->
+    <div class="dropdown">
+      <a href="#" class="text-white dropdown-toggle" data-bs-toggle="dropdown">
+        <i class="bi bi-person-circle fs-5"></i>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="/admin/account">내 정보</a></li>
+        <li><a class="dropdown-item" href="/logout">로그아웃</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container-fluid">
+  <div class="row" style="min-height: calc(100vh - 56px);">
+    <!-- 사이드 메뉴 -->
+    <nav class="col-md-2 d-md-block bg-light sidebar collapse show">
+      <div class="d-flex flex-column h-100">
+        <!-- 프로필 영역 -->
+        <div class="text-center my-3">
+          <img src="/img/admin_M.png" alt="admin profile" class="img-fluid rounded-circle mb-2" width="80" height="80">
+          <h6 class="mb-0">박성원님</h6>
+          <small class="text-muted">CEO</small>
+        </div>
+
+        <!-- 네비게이션 메뉴 -->
+        <div class="flex-grow-1 px-2 sidebar-scroll">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/main"><i class="bi bi-speedometer2 me-2"></i>대시보드</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#menuManage" role="button" aria-expanded="false" aria-controls="menuManage">
+                <i class="bi bi-list-ul me-2"></i>메뉴 관리
+              </a>
+              <div class="collapse ps-3" id="menuManage">
+                <a class="nav-link" href="/admin/menu">메뉴 목록</a>
+                <a class="nav-link" href="/admin/menu/register">메뉴 등록</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/inventory"><i class="bi bi-box-seam me-2"></i>재고 관리</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#orderStat" role="button" aria-expanded="false" aria-controls="orderStat">
+                <i class="bi bi-receipt me-2"></i>주문 관리
+              </a>
+              <div class="collapse ps-3" id="orderStat">
+                <a class="nav-link" href="/admin/order/history">주문 내역</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#salesStat" role="button" aria-expanded="false" aria-controls="salesStat">
+                <i class="bi bi-bar-chart-line me-2"></i>매출 통계
+              </a>
+              <div class="collapse ps-3" id="salesStat">
+                <a class="nav-link" href="/admin/sales/daily">매출 현황</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#point" role="button" aria-expanded="false" aria-controls="point">
+                <i class="bi bi-stars me-2"></i>포인트
+              </a>
+              <div class="collapse ps-3" id="point">
+                <a class="nav-link" href="/admin/point">적립 내역 조회</a>
+                <a class="nav-link" href="/admin/point/edit">포인트 추가</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#adminManage" role="button" aria-expanded="false" aria-controls="adminManage">
+                <i class="bi bi-person-gear me-2"></i>관리자
+              </a>
+              <div class="collapse ps-3" id="adminManage">
+                <a class="nav-link" href="/admin/account">계정 목록</a>
+                <a class="nav-link" href="/admin/log">활동 내역</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 푸터 영역 -->
+        <div class="text-center py-3 small text-muted border-top">
+          ⓒ 2025 Cafe Admin
+        </div>
+      </div>
+    </nav>
+
+    <!-- 본문 콘텐츠 -->
+    <main class="col-md-10 ms-sm-auto px-md-4 pt-4">
+      <!-- 여기에 메인 콘텐츠 넣으세요 -->
+      <div class="card p-5 text-center shadow-sm border-0" style="background: linear-gradient(135deg, #6d4c41, #ff6f00); color: white;">
+        <h2 class="mb-3">Welcome to Coffee Admin ☕</h2>
+        <p style="font-size: 1.1rem;">매장 운영의 모든 것을 한 곳에서!</p>
+        <a href="/admin/menu/register" class="btn btn-light mt-3 px-4 py-2 fw-bold">
+          <i class="bi bi-plus-lg me-1"></i> 메뉴 등록하기
+        </a>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- 공통 스크립트 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

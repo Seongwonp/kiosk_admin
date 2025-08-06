@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cafe_kiosk.kiosk_admin.mapper.AdminMenuMapper">
+    <resultMap id="adminMenuMap" type="com.cafe_kiosk.kiosk_admin.dto.menu.AdminMenuDTO">
+        <id property="menuId" column="menu_id"/>
+        <result property="name" column="name"/>
+        <result property="price" column="price"/>
+        <result property="isSoldOut" column="is_sold_out"/>
+        <result property="imageUrl" column="image_url"/>
+        <result property="stock" column="stock"/>
+        <result property="stockStatus" column="stock_status"/>
+        <result property="modifiedBy" column="modified_by"/>
+        <result property="categoryType" column="categoryType"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="modifiedAt" column="modified_at"/>
+
+        <collection property="optionList" ofType="com.cafe_kiosk.kiosk_admin.dto.category.MenuOptionDTO">
+            <id property="optionId" column="option_id"/>
+            <result property="optionName" column="option_name"/>
+            <result property="optionPrice" column="option_price"/>
+            <result property="optionType" column="option_type"/>
+        </collection>
+    </resultMap>
+
+    <insert id="addMenu" useGeneratedKeys="true" keyProperty="menuId">
+        INSERT INTO menu (image_url, is_sold_out, name, price, stock, category_id, created_at, modified_at)
+        VALUES (#{imageUrl}, #{isSoldOut}, #{name}, #{price}, #{stock}, #{categoryId}, NOW(), NOW())
+    </insert>
+
+    <select id="menuList" parameterType="map" resultMap="adminMenuMap">
+        SELECT m.menu_id, m.name, m.price, m.is_sold_out, m.image_url, m.stock,
+               m.created_at, m.modified_at,
+               c.name AS categoryType, m.category_id,
+               o.option_id, o.option_name, o.option_price, o.option_type
+        FROM menu m
+        JOIN category c ON m.category_id = c.category_id
+        LEFT JOIN menu_option o ON c.category_id = o.category_id
+        <where>
+            <if test="searchType == 'name' and keyword != null and keyword != ''">
+                AND m.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="searchType == 'category' and keyword != null and keyword != ''">
+                AND c.name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="searchType == 'isSoldOut' and keyword != null and keyword != ''">
+                AND m.is_sold_out =
+                <choose>
+                    <when test="keyword == 'true'">1</when>
+                    <when test="keyword == 'false'">0</when>
+                    <otherwise>-1</otherwise>
+                </choose>
+            </if>
+        </where>
+        <choose>
+            <when test="sortOrder == 'asc'">
+                ORDER BY m.menu_id ASC
+            </when>
+            <otherwise>
+                ORDER BY m.menu_id DESC
+            </otherwise>
+        </choose>
+    </select>
+    <select id="getMenuById" parameterType="int" resultMap="adminMenuMap">
+        SELECT m.menu_id, m.name, m.price, m.is_sold_out, m.image_url, m.stock,
+               c.name AS categoryType, m.category_id,
+               o.option_id, o.option_name, o.option_price, o.option_type
+        FROM menu m
+                 JOIN category c ON m.category_id = c.category_id
+                 LEFT JOIN menu_option o ON c.category_id = o.category_id
+        WHERE m.menu_id = #{menuId}
+    </select>
+
+    <select id="getSoldOutMenuList" parameterType="Integer" resultType="com.cafe_kiosk.kiosk_admin.dto.menu.AdminMenuDTO">
+        SELECT m.menu_id, m.name, m.price, m.is_sold_out, m.image_url, m.stock,
+        c.name AS categoryType, m.category_id
+        FROM menu m
+        JOIN category c ON m.category_id = c.category_id
+        WHERE m.is_sold_out = true
+        <if test="categoryId != null">
+            AND m.category_id = #{categoryId}
+        </if>
+        ORDER BY c.name, m.menu_id
+    </select>
+
+    <select id="getLowStockMenuList" parameterType="int" resultType="com.cafe_kiosk.kiosk_admin.dto.menu.AdminMenuDTO">
+        SELECT *
+        FROM menu
+        WHERE stock &lt;= #{threshold}
+          AND stock &gt; 0
+    </select>
+
+    <select id="totalMenuCount">
+        SELECT COUNT(*) FROM menu;
+    </select>
+
+    <select id="totalSoldOutCount">
+        SELECT COUNT(*) FROM menu WHERE is_sold_out = true;
+    </select>
+
+    <select id="totalLowStockMenuCount" parameterType="int">
+        SELECT COUNT(*) FROM menu  WHERE stock &lt;= #{threshold} AND stock &gt; 0
+    </select>
+
+
+
+    <update id="updateMenu" parameterType="com.cafe_kiosk.kiosk_admin.dto.menu.AdminMenuDTO">
+        UPDATE menu
+        SET name = #{name},
+            price = #{price},
+            image_url = #{imageUrl},
+            stock = #{stock},
+            is_sold_out = #{isSoldOut},
+            category_id = #{categoryId},
+            modified_at = NOW()
+        WHERE menu_id = #{menuId}
+    </update>
+
+    <update id="updateStock" parameterType="com.cafe_kiosk.kiosk_admin.dto.menu.StockUpdateDTO">
+        UPDATE menu
+        SET stock = #{stock},
+            modified_at = NOW()
+        WHERE menu_id = #{menuId}
+    </update>
+
+    <update id="updateSoldOut">
+        UPDATE menu
+        SET is_sold_out = #{isSoldOut},
+            modified_at = NOW()
+        WHERE menu_id = #{menuId}
+    </update>
+
+    <delete id="deleteMenuById" parameterType="int">
+        DELETE FROM menu
+        WHERE menu_id = #{menuId}
+    </delete>
+
+
+    <select id="getCategoryStatsAll" resultType="map">
+        SELECT c.name AS categoryName, COUNT(m.menu_id) AS menuCount
+        FROM category c
+                 LEFT JOIN menu m ON c.category_id = m.category_id
+        GROUP BY c.name
+    </select>
+
+</mapper>

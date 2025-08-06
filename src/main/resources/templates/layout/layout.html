@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title layout:title-pattern="$CONTENT_TITLE :: Coffee Admin">Coffee Admin</title>
+
+  <!-- Bootstrap & Fonts -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <link rel="stylesheet" th:href="@{/css/layoutStyle.css}" />
+
+  <!-- 페이지별 추가 head 태그 -->
+  <th:block layout:fragment="head"></th:block>
+</head>
+
+<body>
+
+<!-- 상단 헤더 -->
+<nav class="navbar navbar-expand-lg navbar-dark px-4" style="background-color: #ffb400;">
+  <a class="navbar-brand fw-bold" style="color: black" href="/admin/main">Beans Coffee Admin</a>
+  <button class="navbar-toggler d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarOffcanvas" aria-controls="sidebarOffcanvas">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="ms-auto d-flex align-items-center gap-3">
+    <a href="/admin/notifications" class="text-black position-relative">
+      <i class="bi bi-bell fs-5"></i>
+      <!-- 예: 알림 뱃지 -->
+      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">3</span>
+    </a>
+    <a href="/admin/settings" class="text-black"><i class="bi bi-gear fs-5"></i></a>
+
+    <!-- 프로필 드롭다운 -->
+    <div class="dropdown">
+      <a href="#" class="text-black dropdown-toggle" data-bs-toggle="dropdown">
+        <i class="bi bi-person-circle fs-5"></i>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#profileModal">내 정보</a></li>
+        <li><a class="dropdown-item" href="/logout" onclick="return confirm('로그아웃하시겠습니까?');">로그아웃</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+<div class="container-fluid">
+  <div class="row" style="min-height: calc(100vh - 56px);">
+    <!-- 사이드 메뉴 -->
+    <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+      <div class="d-flex flex-column h-100">
+        <!-- 프로필 영역 -->
+        <div class="text-center my-3" th:if="${currentAdmin != null}">
+          <img src="/img/admin_img.png" alt="admin profile" class="img-fluid rounded-circle mb-2" width="80" height="80">
+          <h6 class="mb-0" th:text="${currentAdmin.adminId + '님'}">아이디</h6>
+          <small class="text-muted" th:text="${currentAdmin.adminRole}">직첵</small>
+        </div>
+
+        <!-- 네비게이션 메뉴 -->
+        <div class="flex-grow-1 px-2 sidebar-scroll">
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/dashboard/main"><i class="bi bi-speedometer2 me-2"></i>대시보드</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#menuManage" role="button" aria-expanded="false" aria-controls="menuManage">
+                <i class="bi bi-list-ul me-2"></i>메뉴 관리
+              </a>
+              <div class="collapse ps-3" id="menuManage">
+                <a class="nav-link" href="/admin/menu/list">메뉴 목록</a>
+                <a class="nav-link" href="/admin/menu/add">메뉴 등록</a>
+                <a class="nav-link" href="/admin/option/list">옵션 관리</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/admin/stock/page"><i class="bi bi-box-seam me-2"></i>재고 관리</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#orderStat" role="button" aria-expanded="false" aria-controls="salesStat">
+                <i class="bi bi-receipt me-2"></i>주문 관리
+              </a>
+              <div class="collapse ps-3" id="orderStat">
+                <a class="nav-link" href="/admin/order/complete">주문 내역</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#salesStat" role="button" aria-expanded="false" aria-controls="salesStat">
+                <i class="bi bi-bar-chart-line me-2"></i>매출 통계
+              </a>
+              <div class="collapse ps-3" id="salesStat">
+                <a class="nav-link" href="/admin/sales/daily">매출 현황</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#point" role="button" aria-expanded="false" aria-controls="point">
+                <i class="bi bi-stars me-2"></i>포인트
+              </a>
+              <div class="collapse ps-3" id="point">
+                <a class="nav-link" href="/admin/point/list">적립 내역 조회</a>
+              </div>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" data-bs-toggle="collapse" href="#adminManage" role="button" aria-expanded="false" aria-controls="adminManage">
+                <i class="bi bi-person-gear me-2"></i>관리자
+              </a>
+              <div class="collapse ps-3" id="adminManage">
+                <a class="nav-link" href="/admin/user/list">계정 목록</a>
+                <a class="nav-link" href="/admin/history/list">활동 내역</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- 푸터 영역 -->
+        <div class="text-center py-3 small text-muted border-top">
+          ⓒ 2025 Cafe Admin
+        </div>
+      </div>
+    </nav>
+
+    <!-- Offcanvas Sidebar for mobile -->
+    <div class="offcanvas offcanvas-start d-md-none" tabindex="-1" id="sidebarOffcanvas" aria-labelledby="sidebarOffcanvasLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="sidebarOffcanvasLabel">메뉴</h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body p-0">
+        <div class="d-flex flex-column h-100">
+          <div class="text-center my-3" th:if="${currentAdmin != null}">
+            <img src="/img/admin_img.png" alt="admin profile" class="img-fluid rounded-circle mb-2" width="80" height="80">
+            <h6 class="mb-0" th:text="${currentAdmin.adminId + '님'}">이름</h6>
+            <small class="text-muted" th:text="${currentAdmin.adminRole}">직책</small>
+          </div>
+          <div class="px-2 sidebar-scroll">
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/main"><i class="bi bi-speedometer2 me-2"></i>대시보드</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#offcanvasMenuManage" role="button" aria-expanded="false" aria-controls="offcanvasMenuManage">
+                  <i class="bi bi-list-ul me-2"></i>메뉴 관리
+                </a>
+                <div class="collapse ps-3" id="offcanvasMenuManage">
+                  <a class="nav-link" href="/admin/menu/list">메뉴 목록</a>
+                  <a class="nav-link" href="/admin/menu/add">메뉴 등록</a>
+                  <a class="nav-link" href="/admin/option/list">옵션 관리</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/admin/stock/page"><i class="bi bi-box-seam me-2"></i>재고 관리</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#offcanvasOrderStat" role="button" aria-expanded="false" aria-controls="offcanvasOrderStat">
+                  <i class="bi bi-receipt me-2"></i>주문 관리
+                </a>
+                <div class="collapse ps-3" id="offcanvasOrderStat">
+                  <a class="nav-link" href="/admin/order/complete">주문 내역</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#offcanvasSalesStat" role="button" aria-expanded="false" aria-controls="offcanvasSalesStat">
+                  <i class="bi bi-bar-chart-line me-2"></i>매출 통계
+                </a>
+                <div class="collapse ps-3" id="offcanvasSalesStat">
+                  <a class="nav-link" href="/admin/sales/daily">매출 현황</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#offcanvasPoint" role="button" aria-expanded="false" aria-controls="offcanvasPoint">
+                  <i class="bi bi-stars me-2"></i>포인트
+                </a>
+                <div class="collapse ps-3" id="offcanvasPoint">
+                  <a class="nav-link" href="/admin/point/list">적립 내역 조회</a>
+                </div>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="collapse" href="#offcanvasAdminManage" role="button" aria-expanded="false" aria-controls="offcanvasAdminManage">
+                  <i class="bi bi-person-gear me-2"></i>관리자
+                </a>
+                <div class="collapse ps-3" id="offcanvasAdminManage">
+                  <a class="nav-link" href="/admin/user/list">계정 목록</a>
+                  <a class="nav-link" href="/admin/history/list">활동 내역</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div class="text-center py-3 small text-muted border-top">
+            ⓒ 2025 Cafe Admin
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 본문 콘텐츠 -->
+    <main class="col-md-10 ms-sm-auto px-md-4 pt-4" style="height: calc(100vh - 56px); overflow-y: auto;" layout:fragment="content"></main>
+  </div>
+</div>
+
+<!-- 공통 스크립트 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- 페이지별 추가 JS -->
+<th:block layout:fragment="script"></th:block>
+
+<!-- 내 정보 모달 -->
+<div class="modal fade" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="profileModalLabel">내 정보</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center mb-3">
+          <img src="/img/admin_img.png" alt="admin profile" class="rounded-circle" width="80" height="80">
+        </div>
+        <p><strong>아이디:</strong> <span th:text="${currentAdmin.adminId}">admin01</span></p>
+        <p><strong>직책:</strong> <span th:text="${currentAdmin.adminRole}">MANAGER</span></p>
+        <p><strong>가입일:</strong> <span th:text="${#temporals.format(currentAdmin.createdAt, 'yy-MM-dd')}"></span></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>매출 현황</title>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <h3 class="mb-4"><i class="bi bi-bar-chart-line-fill me-2"></i>매출 현황</h3>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <form method="get" action="/admin/sales/hourly" class="row g-3 align-items-end">
+            <div class="col-auto">
+                <label class="form-label"><i class="bi bi-calendar-date me-1"></i>시작일</label>
+                <input type="date" name="startDate" th:value="${searchDTO.startDate}" class="form-control">
+            </div>
+            <div class="col-auto">
+                <label class="form-label"><i class="bi bi-calendar-date-fill me-1"></i>종료일</label>
+                <input type="date" name="endDate" th:value="${searchDTO.endDate}" class="form-control">
+            </div>
+            <div class="col-auto">
+                <label class="form-label"><i class="bi bi-filter-square me-1"></i>검색 조건</label>
+                <select name="searchType" class="form-select">
+                    <option value="categoryName" th:selected="${searchDTO.searchType == 'categoryName'}">카테고리명</option>
+                    <option value="menuName" th:selected="${searchDTO.searchType == 'menuName'}">상품명</option>
+                </select>
+            </div>
+            <div class="col-md-4 col-sm-8">
+                <label class="form-label"><i class="bi bi-search me-1"></i>검색어</label>
+                <input type="text" name="keyword" placeholder="검색어 입력" th:value="${searchDTO.keyword}" class="form-control">
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-warning text-dark custom-hover-dark">검색</button>
+            </div>
+        </form>
+    </div>
+
+
+
+    <div class="mb-4">
+        <a href="/admin/sales/daily"
+           class="btn btn-outline-warning  me-2"><i class="bi bi-calendar-day me-1"></i>일별</a>
+        <a href="/admin/sales/monthly" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar3 me-1"></i>월별</a>
+        <a href="/admin/sales/weekly" class="btn btn-outline-warning  me-2"><i class="bi bi-calendar-week me-1"></i>요일별</a>
+        <a href="/admin/sales/hourly" class="btn btn-warning text-dark custom-hover-dark me-2 active"
+           aria-current="page"><i class="bi bi-clock-history me-1"></i>시간대별</a>
+    </div>
+
+    <div class="card p-4 mb-4 shadow-sm">
+        <h6 class="card-title">⏰ 시간대별 매출 차트 (AM / PM)</h6>
+        <div class="d-flex justify-content-between mb-3">
+            <p class="text-muted mb-3">
+                <i class="bi bi-calendar-event me-1"></i>
+                오늘 날짜: <span th:text="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">2025-07-31</span>
+            </p>
+        </div>
+        <canvas id="hourlySalesChart" style="max-width: 100%; height: 500px;"></canvas>
+    </div>
+
+
+    <div class="card mt-4 p-4 mb-4 shadow-sm">
+        <h6 class="card-title mb-3"><i class="bi bi-list-ul me-2"></i> 오늘 시간대별 매출 상세 리스트</h6>
+        <div class="mb-3 d-flex justify-content-end">
+            <strong class="me-2">총 매출액:</strong>
+            <span th:text="${#numbers.formatInteger(totalTodaySales, 0, 'COMMA')} + ' ₩'">0 ₩</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-hover align-middle text-center">
+                <thead class="table-light">
+                <tr>
+                    <th>시간대</th>
+                    <th>주문 수 (건)</th>
+                    <th>매출액 (₩)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:if="${hourlySales == null or #lists.isEmpty(hourlySales)}">
+                    <td colspan="3" class="text-center text-muted">검색 결과가 없습니다.</td>
+                </tr>
+                <tr th:each="item : ${hourlySales}">
+                    <td th:text="${item.hour}">2025-07-01</td>
+                    <td th:text="${item.orderCount}">12</td>
+                    <td th:text="${#numbers.formatInteger(item.totalSales, 0, 'COMMA')}">9,300</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<script layout:fragment="script" th:inline="javascript">
+    // 시간대별 매출 차트 (AM/PM)
+    let HourlyData = /*[[${hourlySales}]]*/ [];
+
+    if (HourlyData && HourlyData.length > 0) {
+        // Prepare AM (0-11) and PM (12-23) labels
+        const amLabels = Array.from({length: 12}, (_, i) => i);
+        const pmLabels = Array.from({length: 12}, (_, i) => i + 12);
+
+// 전체 24시간 라벨
+        const labels = Array.from({length: 24}, (_, i) => i);
+
+        const salesMap = {};
+        HourlyData.forEach(s => {
+            salesMap[s.hour] = s.totalSales;
+        });
+
+        const amSales = labels.map(hour => (hour >= 0 && hour < 12) ? (salesMap[hour] || 0) : 0);
+        const pmSales = labels.map(hour => (hour >= 12 && hour < 24) ? (salesMap[hour] || 0) : 0);
+
+        const ctx2 = document.getElementById('hourlySalesChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: '오전 매출 (₩)',
+                        data: amSales,
+                        borderColor: '#1976d2',
+                        backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                        fill: true,
+                        tension: 0.3,
+                    },
+                    {
+                        label: '오후 매출 (₩)',
+                        data: pmSales,
+                        borderColor: '#d32f2f',
+                        backgroundColor: 'rgba(211, 47, 47, 0.2)',
+                        fill: true,
+                        tension: 0.3,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: true },
+                    tooltip: { enabled: true }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: '시간 (24시간)' },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '시';
+                            }
+                        }
+                    },
+                    y: {
+                        title: { display: true, text: '매출액 (₩)' },
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    } else {
+        console.log("시간대별 매출 데이터 없음!");
+    }
+</script>
+
+</body>
+</html>

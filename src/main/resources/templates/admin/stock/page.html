@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout.html}">
+
+<head>
+    <title>대시보드</title>
+    <style>
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+
+<body>
+<main layout:fragment="content">
+    <div  class="d-flex flex-column justify-content-center align-items-center" style="height: 70vh; color: #ffb700; font-family: 'Arial Black', Gadget, sans-serif;">
+        <div class="text-center border border-warning border-3 rounded-3 p-5 bg-warning bg-opacity-10 shadow" style="max-width: 1200px;">
+            <h3 class="display-5 mb-4">
+                <i class="bi bi-box-seam me-2"></i>🚧 재고 관리 기능 준비중입니다! 🚧 <i class="bi bi-tools ms-2"></i>
+            </h3>
+            <p class="lead text-secondary">
+                <i class="bi bi-hourglass-split me-2"></i> 재고 테이블 작업 중.
+            </p>
+            <div class="fs-1 mt-4 text-warning" style="animation: blink 1.5s infinite;">
+                <i class="bi bi-gear-fill"></i> <i class="bi bi-arrow-repeat"></i>
+            </div>
+
+            <a href="/admin/main" class="btn btn-warning btn-lg mt-5 shadow-sm">
+                <i class="bi bi-house-door-fill me-2"></i> 메인페이지로 돌아가기
+            </a>
+        </div>
+    </div>
+</main>
+<script layout:fragment="script" th:inline="javascript">
+    // 스크립트는 여기에
+</script>
+</body>
+</html>
