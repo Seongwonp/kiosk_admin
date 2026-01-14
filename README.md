@@ -1,9 +1,18 @@
 # 🛠️ Cafe Kiosk – 관리자(Admin) 시스템
 
-**BEANS COFFEE KIOSK**의 관리자(Admin) 시스템은  
-매장 운영을 위한 메뉴 관리, 주문 내역 확인, 매출 통계 기능을 제공하는  
-Spring Boot + Thymeleaf 기반의 웹 애플리케이션입니다.
 
+**BEANS COFFEE KIOSK**의 관리자(Admin) 시스템은  
+키오스크 주문 데이터를 기반으로 **메뉴, 주문, 매출, 재고를 관리**할 수 있도록 구현한  
+Spring Boot + Thymeleaf 기반의 관리자 웹 애플리케이션입니다.
+
+키오스크(User)와 관리자는 **분리된 프로젝트 구조**로 설계되었으며,  
+API 연동을 통해 실제 매장 운영 환경을 가정한 관리자 기능을 구현했습니다.
+
+
+
+💁🏻‍♂️ **Kiosk(User) Repository 바로가기**
+
+[![Kiosk User Repo](https://img.shields.io/badge/Kiosk%20User%20Repo-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sjyun0507/kiosk_user_react)
 ---
 
 ## 📌 프로젝트 개요
