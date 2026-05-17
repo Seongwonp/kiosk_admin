@@ -13,6 +13,7 @@ API 연동을 통해 실제 매장 운영 환경을 가정한 관리자 기능�
 💁🏻‍♂️ **Kiosk(User) Repository 바로가기**
 
 [![Kiosk User Repo](https://img.shields.io/badge/Kiosk%20User%20Repo-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/sjyun0507/kiosk_user_react)
+[![KIOSK 발표자료](https://img.shields.io/badge/Kiosk%20발표%20자료-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/user-attachments/files/27879932/KIOSK.pdf)
 ---
 
 ## 📌 프로젝트 개요
